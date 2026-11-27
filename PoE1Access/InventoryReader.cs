@@ -724,6 +724,7 @@ public partial class PoE1AccessCore
     private long _handItemAddr;
     private string _handItemTitle = "";
     private Dictionary<string, (long Addr, string Title)> _equipped;
+    private string _equipmentOwner;
     private long _nextHandPollMs;
 
     private readonly Dictionary<string, (long SinceMs, string Title)> _gone = new Dictionary<string, (long, string)>();
@@ -762,6 +763,20 @@ public partial class PoE1AccessCore
         _nextHandPollMs = now + 200;
         ServerData server = GetServerData();
         if (server == null) return;
+
+        // Another character (a new one, or one picked from the list): what the last one wore is
+        // forgotten, or its gear would be said as unequipped on entering the first area (seen
+        // 27 Nov 2026: "Unequipped: Rusted Sword", "Unequipped: Plate Vest" on a new Witch).
+        string owner = Try(() => GetComp<ExileCore.PoEMemory.Components.Player>(GameController.Player)?.PlayerName, null);
+        if (string.IsNullOrEmpty(owner)) return;
+        if (owner != _equipmentOwner)
+        {
+            if (_equipmentOwner != null) PluginLog.Write("Equipment: now " + owner + ", the last character's gear forgotten");
+            _equipmentOwner = owner;
+            _equipped = null;
+            _gone.Clear();
+            _flaskUses.Clear();
+        }
 
         // Worn gear by slot.
         var equipped = new Dictionary<string, (long, string)>();
