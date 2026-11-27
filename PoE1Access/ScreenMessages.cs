@@ -160,14 +160,20 @@ public partial class PoE1AccessCore
         // game's prompts turn to its own ("A: Delete Character", "B: Cancel"), not when its text
         // changes (seen 21 Nov 2026: said on entering the character list, and missed when opened
         // again for the same character).
-        bool deleting = _legendNow.Any(e => e.StartsWith("A: ", StringComparison.Ordinal) && EndsWithGameWord(e, DeleteCharacterWord));
+        // The confirmation's prompt is a combination, "A and Y together: Delete Character" (the
+        // character list's own is "X: Delete Character").
+        string deletePrompt = _legendNow.FirstOrDefault(e => e.StartsWith("A", StringComparison.Ordinal) && e.Contains(": ") && EndsWithGameWord(e, DeleteCharacterWord));
+        bool deleting = deletePrompt != null;
         if (deleting && !_deleteDialogSaid)
         {
             if (_deleteSinceMs == 0) _deleteSinceMs = now;
             // The question can sit deeper than the screen's other lines (seen 21 Nov 2026: read
             // for one character and missed for another), so the whole screen is searched.
             string question = texts.FirstOrDefault(t => t.Contains('?')) ?? DeepQuestion(tops);
-            string how = T("A deletes it, B cancels.", "A lo borra, B cancela.");
+            // The buttons the game's prompt names: "A and Y together" (found 27 Nov 2026; A alone
+            // does nothing).
+            string keys = deletePrompt.Substring(0, deletePrompt.IndexOf(": ", StringComparison.Ordinal));
+            string how = T($"Press {keys} to delete it, B cancels.", $"Pulsa {keys} para borrarlo, B cancela.");
             if (question != null)
             {
                 _deleteDialogSaid = true;
@@ -185,7 +191,7 @@ public partial class PoE1AccessCore
                 Say(T($"Delete {who}? Move any items you want to keep to your stash first. {how}", $"¿Borrar {who}? Mueve antes a tu alijo los objetos que quieras conservar. {how}"), true);
             }
         }
-        if (deleting && now >= _nextDeleteDiagMs) { _nextDeleteDiagMs = now + 1000; Try(() => { LogDeleteDialog(tops); return true; }, false); }
+        if (deleting && now >= _nextDeleteDiagMs) { _nextDeleteDiagMs = long.MaxValue; Try(() => { LogDeleteDialog(tops); return true; }, false); }
         if (!deleting) { _deleteDialogSaid = false; _deleteSinceMs = 0; _nextDeleteDiagMs = 0; }
         // A question (a confirmation) only while a dialog is open, which the prompts show with
         // a way to cancel; one left behind in the screen is not said.

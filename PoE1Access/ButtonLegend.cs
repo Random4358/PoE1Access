@@ -232,7 +232,21 @@ public partial class PoE1AccessCore
                     if (box.Length > 0 && LegendButtons.TryGetValue(box, out string b)) buttons.Add(ButtonWord(b));
                     else if (box.Length > 0 && _unnamedPictures.Add(box)) PluginLog.Write("Legend picture not named: " + box + " (" + label + ")");
                 }
+                // A combination: "[A] + [Y] Delete Character" (found 27 Nov 2026 on the delete
+                // confirmation: the label part names A, then a "+" part, then a picture part with
+                // Y in its second picture, +0x230). Every button after the "+" is added, and the
+                // line says they go together ("A and Y together: Delete Character").
+                int plus = shown.FindIndex(pt => CleanText(UiText.Text(mem, pt)) == "+");
+                bool combo = plus >= 0;
+                if (combo)
+                    foreach (Element part in shown.Skip(plus + 1))
+                    {
+                        string box = IconBox(part, 0x230, 0x280, 0x510, 0x560);
+                        if (box.Length > 0 && LegendButtons.TryGetValue(box, out string b)) buttons.Add(ButtonWord(b));
+                        else if (box.Length > 0 && _unnamedPictures.Add(box)) PluginLog.Write("Legend picture not named: " + box + " (" + label + ", after +)");
+                    }
                 buttons = buttons.Where(x => x.Length > 0).Distinct().ToList();
+                if (combo && buttons.Count > 1) return string.Join(T(" and ", " y "), buttons) + T(" together", " a la vez") + ": " + label;
                 return buttons.Count > 0 ? string.Join(T(" and ", " y "), buttons) + ": " + label : label;
             }
         }
