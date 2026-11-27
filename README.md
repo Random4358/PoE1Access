@@ -159,6 +159,11 @@ that menu.
 - **Right stick left and right**: open a submenu, turn a switch on or off, or change a value in
   steps of 5. A volume plays its sound as it changes.
 - **Tap L3** (Backspace): back up one level. **Double tap L3**, or hold F3 again: close.
+- **Speech priority**: for each kind of news the mod says by itself (harmful states beginning and
+  ending, low life and mana, a boss's life, enemy names, quest route, things you walk up to,
+  changes in your bag, arriving with the guide, charges, level up), whether it waits its turn,
+  cuts in when urgent, cuts in, or cuts in and cannot be cut off (other news waits 1.5 seconds
+  behind it). What you ask for with the controller always cuts in. As in Poe2Access.
 - **Sound glossary** (last submenu): every sound the mod makes, with what it means; right stick
   left or right plays it.
 

@@ -69,7 +69,7 @@ public partial class PoE1AccessCore
         _nav.QuestRouteNext = path != null && path.Count > 1 ? path[1].Name : null;
         if (sig == _routeSig) return;
         _routeSig = sig;
-        if (Try(() => current.Id == target.Id, false)) { Say(T("Quest route: your quest is in this area.", "Ruta de misión: tu misión está en esta área."), false); return; }
+        if (Try(() => current.Id == target.Id, false)) { SayNews(News.Quest, T("Quest route: your quest is in this area.", "Ruta de misión: tu misión está en esta área."), false); return; }
         if (path == null || path.Count < 2) { PluginLog.Write("Quest route: no way found to " + target.Name); return; }
         var names = path.Skip(1).Select(a => a.Name).ToList();
         string way = names.Count == 1 ? T($"next area, {names[0]}", $"siguiente área, {names[0]}")
@@ -79,7 +79,7 @@ public partial class PoE1AccessCore
         var wp = path.Skip(1).Reverse().FirstOrDefault(a => Try(() => a.HasWaypoint, false) && !Try(() => a.IsTown, false));
         if (wp != null && names.Count > 1) text += " " + T($"Last waypoint on the way: {wp.Name}.", $"Último transportador del camino: {wp.Name}.");
         PluginLog.Write("Quest route: " + string.Join(" > ", path.Select(a => a.Name)));
-        Say(text, false);
+        SayNews(News.Quest, text, false);
     }
 
     // The fewest areas from one to the other through the act's paths, or null.

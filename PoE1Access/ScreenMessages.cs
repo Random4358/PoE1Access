@@ -49,6 +49,58 @@ public partial class PoE1AccessCore
         return null;
     }
 
+    private long _nextDeleteDiagMs;
+
+    // While the delete confirmation is open, once a second: its delete and cancel buttons
+    // (shown, highlighted, the selection's focus flag) and which window has the focus, to find
+    // why A does not delete (reported 27 Nov 2026). Only written to the log.
+    private void LogDeleteDialog(List<Element> tops)
+    {
+        var mem = Mem;
+        var parts = new List<string>();
+        foreach (Element top in tops)
+        {
+            var queue = new Queue<(Element E, int D, string Path)>();
+            queue.Enqueue((top, 0, "top"));
+            int visited = 0;
+            while (queue.Count > 0 && visited < 4000)
+            {
+                var (e, d, path) = queue.Dequeue();
+                visited++;
+                string t = CleanText(UiText.Text(mem, e)).ToLowerInvariant();
+                if (t.Length > 0 && t.Length < 40 && (t.Contains("delete") || t.Contains("cancel") || t.Contains("migration")))
+                {
+                    bool shown = Try(() => UiText.Visible(mem, e), false);
+                    bool lit = Try(() => UiText.Highlighted(mem, e), false);
+                    bool focus = Try(() => UiText.FocusFlag(UiText.ReadSelectionBlock(mem, e)), false);
+                    var up = UiText.ParentOf(mem, e);
+                    bool upLit = up != null && Try(() => UiText.Highlighted(mem, up), false);
+                    bool upFocus = up != null && Try(() => UiText.FocusFlag(UiText.ReadSelectionBlock(mem, up)), false);
+                    parts.Add($"{path} '{t}' shown={shown} lit={lit} focus={focus} parentLit={upLit} parentFocus={upFocus}");
+                }
+                if (d >= 14) continue;
+                var kids = Try<IList<Element>>(() => Fresh(e)?.Children, null);
+                if (kids == null || kids.Count > 200) continue;
+                for (int i = 0; i < kids.Count; i++) queue.Enqueue((kids[i], d + 1, path + "/" + i));
+            }
+        }
+        string fg = "";
+        try
+        {
+            IntPtr h = GetForegroundWindow();
+            GetWindowThreadProcessId(h, out uint pid);
+            var title = new System.Text.StringBuilder(128);
+            GetWindowText(h, title, title.Capacity);
+            fg = System.Diagnostics.Process.GetProcessById((int)pid).ProcessName + " '" + title + "'";
+        }
+        catch { }
+        PluginLog.Write("Delete dialog: focus window " + fg + "; legend " + string.Join(", ", _legendNow) + "; " + string.Join(" | ", parts));
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)] private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int count);
+
     private void PollScreenMessages(long now)
     {
         if (now < _nextScreenTextsMs) return;
@@ -133,7 +185,8 @@ public partial class PoE1AccessCore
                 Say(T($"Delete {who}? Move any items you want to keep to your stash first. {how}", $"¿Borrar {who}? Mueve antes a tu alijo los objetos que quieras conservar. {how}"), true);
             }
         }
-        if (!deleting) { _deleteDialogSaid = false; _deleteSinceMs = 0; }
+        if (deleting && now >= _nextDeleteDiagMs) { _nextDeleteDiagMs = now + 1000; Try(() => { LogDeleteDialog(tops); return true; }, false); }
+        if (!deleting) { _deleteDialogSaid = false; _deleteSinceMs = 0; _nextDeleteDiagMs = 0; }
         // A question (a confirmation) only while a dialog is open, which the prompts show with
         // a way to cancel; one left behind in the screen is not said.
         bool dialog = deleting || _legendNow.Any(e => e.EndsWith("Cancel", StringComparison.OrdinalIgnoreCase));

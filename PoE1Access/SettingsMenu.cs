@@ -86,6 +86,7 @@ public partial class PoE1AccessCore
                 Sw(T("Turn prompts while guiding", "Avisos de giro durante la guía"), Settings.RoutePrompts),
                 Sw(T("Announce panels", "Anunciar los paneles"), Settings.AnnouncePanels),
                 Sw(T("Read a PlayStation controller for the mod's L3 controls", "Leer un mando de PlayStation para los controles L3 del mod"), Settings.ReadPlayStationController)),
+            SpeechPriorityMenu(),
             Sub(T("Sounds on or off", "Sonidos activados o desactivados"),
                 Sw(T("Wall radar", "Radar de paredes"), Settings.Radar),
                 Sw(T("Unexplored ground pips", "Pitidos del terreno sin explorar"), Settings.UnexploredMark),
@@ -109,6 +110,30 @@ public partial class PoE1AccessCore
                 Sw(T("Read what is under the cursor", "Leer lo que hay bajo el cursor"), Settings.ReadOnHover),
                 Sw(T("Read the tooltips of menus", "Leer las descripciones de los menús"), Settings.SpeakTooltips)),
             Sub(T("Sound glossary", "Glosario de sonidos"), Glossary().ToArray()),
+        };
+    }
+
+    // Speech priority (as in Poe2Access): how each kind of news the mod says by itself is delivered.
+    private MenuItem SpeechPriorityMenu()
+    {
+        MenuItem P(string label, News kind) => new MenuItem { Label = label, Range = NewsLevel(kind), Step = 1, Words = NewsLevelWords };
+        return new MenuItem
+        {
+            Label = T("Speech priority", "Prioridad de la voz"),
+            Children = new List<MenuItem>
+            {
+                P(T("Speech: frozen, poisoned, cursed, harmful ground and the like beginning", "Voz: congelado, envenenado, maldito, suelo dañino y similares al empezar"), News.StatusBegins),
+                P(T("Speech: those ending", "Voz: al terminar"), News.StatusEnds),
+                P(T("Speech: low life, mana and shield, urgent when life is under half", "Voz: poca vida, maná y escudo, urgente con la vida por debajo de la mitad"), News.LifeAndMana),
+                P(T("Speech: a boss's life, urgent at 30 percent and when defeated", "Voz: la vida de un jefe, urgente al 30 por ciento y al ser derrotado"), News.BossLife),
+                P(T("Speech: enemy names, urgent for the one you aim at and rares and uniques coming into view", "Voz: nombres de enemigos, urgente para el que apuntas y los raros y únicos que aparecen"), News.EnemyNames),
+                P(T("Speech: quest route", "Voz: ruta de misión"), News.Quest),
+                P(T("Speech: things you walk up to", "Voz: lo que tienes cerca al acercarte"), News.Places),
+                P(T("Speech: changes in your bag", "Voz: cambios en tu bolsa"), News.Bag),
+                P(T("Speech: arriving with the guide", "Voz: llegar con la guía"), News.Arrivals),
+                P(T("Speech: charges", "Voz: cargas"), News.Charges),
+                P(T("Speech: level up", "Voz: subida de nivel"), News.LevelUp),
+            },
         };
     }
 

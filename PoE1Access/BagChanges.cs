@@ -127,7 +127,7 @@ public partial class PoE1AccessCore
         }
         if (say.Count == 0) return;
         PluginLog.Write("Bag change (panels: " + string.Join(", ", panels) + "; legend: " + string.Join(", ", _legendNow) + "): " + string.Join(" | ", say));
-        Say(JoinSpeech(say), false);
+        SayNews(News.Bag, JoinSpeech(say), false);
     }
 
     /// <summary>A vendor's sell window is open or closed in the last three seconds.</summary>

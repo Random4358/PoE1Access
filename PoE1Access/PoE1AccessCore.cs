@@ -266,6 +266,7 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
             PluginLog.Write("Sound pack: " + (_soundPack.Available ? _soundPack.Folder + " (" + string.Join(", ", _soundPack.Names) + ")" : "none (no sounds folder beside PoE1Access.exe)"));
             _nav = new Navigator(GameController, _audio, t => Say(t, true), t => Say(t, false),
                 () => Settings.RadarVolume.Value / 100f, () => Settings.GuideVolume.Value / 100f);
+            _nav.News = SayNews;
 
             Say(T($"Path of Exile access plugin loaded. Using {_speech.Name}.", $"Complemento de accesibilidad de Path of Exile cargado. Usando {_speech.Name}.") +
                 (_audio.Available ? "" : T(" Sounds are not available.", " Los sonidos no están disponibles.")), true);
@@ -456,6 +457,7 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
                 PluginLog.Write("Navigation " + (uiBusy ? "paused (menu, panel or dialogue)" : "resumed"));
             }
             HandleNavigationInput(now, uiBusy);
+            _fromInput = false;
             Guard("inventory moves", () => PollInventoryMoves(now));
             Guard("sell offer", () => PollSellOffer(now));
             Guard("map device", () => PollMapDevice(now));
@@ -540,6 +542,8 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
         }
 
         if (cmd != ControllerInput.Command.None) PluginLog.Write("Controller: " + cmd);
+        // What the player asks for cuts in even while news that cannot be cut off is said.
+        _fromInput = cmd != ControllerInput.Command.None;
 
         if (Pressed("scan previous category", Settings.ScanPrevCategoryHotkey, Keys.PageUp)) cmd = ControllerInput.Command.ScanUp;
         if (Pressed("scan next category", Settings.ScanNextCategoryHotkey, Keys.PageDown)) cmd = ControllerInput.Command.ScanDown;
@@ -818,7 +822,7 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
                 {
                     string spokenName = name == "Life" ? T("Life", "Vida") : name == "Mana" ? T("Mana", "Maná") : T("Energy shield", "Escudo de energía");
                     int below = (step + 1) * 25;
-                    Say(T($"{spokenName} below {below} percent", $"{spokenName} por debajo del {below} por ciento"), urgent && step <= 1);
+                    SayNews(News.LifeAndMana, T($"{spokenName} below {below} percent", $"{spokenName} por debajo del {below} por ciento"), urgent && step <= 1);
                 }
             }
             else if (step > last && pct >= step * 25 + 5)
@@ -2985,6 +2989,9 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
         if (string.IsNullOrWhiteSpace(text)) return;
         if (text.Length > MaxSpeechChars) text = text.Substring(0, MaxSpeechChars);
 
+        // News that cannot be cut off holds for 1.5 s: other speech queues behind it, except what
+        // the player just asked for (SpeechPriority.cs).
+        if (interrupt && !_fromInput && _clock.ElapsedMilliseconds < _holdUntilMs) interrupt = false;
         _lastSpoken = text;
         PluginLog.Write("Said: " + text.Replace("\r", " ").Replace("\n", " | "));
         _speech.Speak(text, interrupt);

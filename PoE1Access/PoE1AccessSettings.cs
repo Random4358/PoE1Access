@@ -78,6 +78,20 @@ public class PoE1AccessSettings : ISettings
     // Which items sound: 0 = all, 1 = magic or better (plus currency, gems, quest items...),
     // 2 = only valuable ones (currency, gems, quest items, maps, cards, rares and uniques).
     public RangeNode<int> LootFilter { get; set; } = new RangeNode<int>(0, 0, 2);
+
+    // Speech priority (SpeechPriority.cs): 0 waits, 1 cuts in when urgent, 2 cuts in, 3 cuts in
+    // and cannot be cut off for 1.5 s. Defaults as in Poe2Access.
+    public RangeNode<int> SpeechStatusBegins { get; set; } = new RangeNode<int>(3, 0, 3);
+    public RangeNode<int> SpeechStatusEnds { get; set; } = new RangeNode<int>(2, 0, 3);
+    public RangeNode<int> SpeechLifeAndMana { get; set; } = new RangeNode<int>(1, 0, 3);
+    public RangeNode<int> SpeechBossLife { get; set; } = new RangeNode<int>(1, 0, 3);
+    public RangeNode<int> SpeechEnemyNames { get; set; } = new RangeNode<int>(1, 0, 3);
+    public RangeNode<int> SpeechQuest { get; set; } = new RangeNode<int>(0, 0, 3);
+    public RangeNode<int> SpeechPlaces { get; set; } = new RangeNode<int>(0, 0, 3);
+    public RangeNode<int> SpeechBag { get; set; } = new RangeNode<int>(0, 0, 3);
+    public RangeNode<int> SpeechArrivals { get; set; } = new RangeNode<int>(3, 0, 3);
+    public RangeNode<int> SpeechCharges { get; set; } = new RangeNode<int>(0, 0, 3);
+    public RangeNode<int> SpeechLevelUp { get; set; } = new RangeNode<int>(2, 0, 3);
     public RangeNode<int> LootVolume { get; set; } = new RangeNode<int>(60, 0, 200);
 
     // Enemies: a growl for each enemy on screen from its side, faster as it gets closer (a buzz

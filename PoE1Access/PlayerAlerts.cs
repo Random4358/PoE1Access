@@ -129,9 +129,9 @@ public partial class PoE1AccessCore
             if (said.Count > 0)
             {
                 _audio?.Play("ailment", Synth.Ailment, vol);
-                Say(string.Join(". ", said.Select(AilmentSaid)), false);
+                SayNews(News.StatusBegins, string.Join(". ", said.Select(AilmentSaid)), true);
             }
-            if (ended.Count > 0) Say(string.Join(". ", ended.Select(AilmentEnded)), false);
+            if (ended.Count > 0) SayNews(News.StatusEnds, string.Join(". ", ended.Select(AilmentEnded)), true);
             _states = now2;
         }
 
@@ -147,7 +147,7 @@ public partial class PoE1AccessCore
                     if (_groundNamed.Add(id))
                     {
                         string n = Try(() => b.DisplayName, "") ?? "";
-                        Say(n.Length > 0 ? n : T("Harmful ground", "Suelo dañino"), false);
+                        SayNews(News.StatusBegins, n.Length > 0 ? n : T("Harmful ground", "Suelo dañino"), true);
                     }
             }
         }
@@ -164,7 +164,7 @@ public partial class PoE1AccessCore
                     bool gained = count > _charges[k];
                     int kind = k;
                     _audio?.Play("charge:" + k + ":" + gained, () => Synth.Charge(kind, gained), vol);
-                    Say(ChargeSaid(k, count), false);
+                    SayNews(News.Charges, ChargeSaid(k, count), false);
                 }
                 _charges[k] = count;
             }
@@ -176,7 +176,7 @@ public partial class PoE1AccessCore
             if (_lastLevel > 0 && level > _lastLevel && Settings.AnnounceLevelUp.Value)
             {
                 _audio?.Play("levelup", Synth.LevelUp, vol);
-                Say(T($"Level {level}", $"Nivel {level}"), true);
+                SayNews(News.LevelUp, T($"Level {level}", $"Nivel {level}"), true);
             }
             _lastLevel = level;
         }
@@ -210,7 +210,7 @@ public partial class PoE1AccessCore
             seen.Add(id);
             if (!alive)
             {
-                if (known.Step >= 0) Say(T($"{known.Name} defeated", $"{known.Name} derrotado"), true);
+                if (known.Step >= 0) SayNews(News.BossLife, T($"{known.Name} defeated", $"{known.Name} derrotado"), true);
                 _bosses[id] = (known.Name, -1);
                 continue;
             }
@@ -221,7 +221,7 @@ public partial class PoE1AccessCore
             if (step != known.Step)
             {
                 _bosses[id] = (known.Name, step);
-                Say(T($"{known.Name}, {pct} percent", $"{known.Name}, {pct} por ciento"), false);
+                SayNews(News.BossLife, T($"{known.Name}, {pct} percent", $"{known.Name}, {pct} por ciento"), pct <= 30);
             }
         }
         // Bosses gone from the list (left behind or unloaded) are forgotten after a while.

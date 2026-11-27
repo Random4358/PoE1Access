@@ -47,6 +47,14 @@ internal sealed partial class Navigator
         _guideVolume = guideVolume;
     }
 
+    /// <summary>News at its speech priority (SpeechPriority.cs): kind, text, urgent.</summary>
+    public Action<News, string, bool> News;
+    private void Tell(News kind, string text, bool urgent, bool interruptIfNoPriority)
+    {
+        if (News != null) News(kind, text, urgent);
+        else if (interruptIfNoPriority) _say(text); else _sayQueued(text);
+    }
+
     public bool AnnounceNearby = true;
     public bool RoutePrompts = true;
 
@@ -462,7 +470,7 @@ internal sealed partial class Navigator
                     if (named != _lastTargetName || now - _lastTargetNameMs > 2000)
                     {
                         int life = (int)Math.Round(Try(() => targeted.GetComponent<Life>().HPPercentage, 1f) * 100);
-                        _say(named + (life < 100 ? T($", {life} percent", $", {life} por ciento") : ""));
+                        Tell(PoE1Access.News.EnemyNames, named + (life < 100 ? T($", {life} percent", $", {life} por ciento") : ""), true, true);
                     }
                     _lastTargetName = named;
                     _lastTargetNameMs = now;
@@ -494,7 +502,8 @@ internal sealed partial class Navigator
                     parts.Add(grp.Key.Name + (n > 1 ? ", " + n : "") + rar + dir);
                     if (parts.Count >= 4) break;
                 }
-                _sayQueued(string.Join(". ", parts));
+                bool strong = fresh.Any(x => x.Rarity == MonsterRarity.Rare || x.Rarity == MonsterRarity.Unique);
+                Tell(PoE1Access.News.EnemyNames, string.Join(". ", parts), strong, false);
             }
         }
 
@@ -894,7 +903,7 @@ internal sealed partial class Navigator
             st.WentAway = false;
             st.SaidAtMs = now;
         }
-        _sayQueued(string.Join(". ", batch.Select(x => x.Text)));
+        Tell(PoE1Access.News.Places, string.Join(". ", batch.Select(x => x.Text)), false, false);
         _nextNearbySpeechMs = now + 900;
     }
 
@@ -2067,7 +2076,7 @@ internal sealed partial class Navigator
         {
             // Explore mode: on to the next unexplored ground (Mapping.cs).
             if (ExploreMode && _guideTarget.Cat == Cat.Unexplored) { if (!ExploreNext(p)) _guideTarget = null; return; }
-            _say(T($"Arrived at {_guideName}. Scan unexplored again to go on.", $"Llegaste a {_guideName}. Escanea de nuevo lo sin explorar para seguir."));
+            Tell(PoE1Access.News.Arrivals, T($"Arrived at {_guideName}. Scan unexplored again to go on.", $"Llegaste a {_guideName}. Escanea de nuevo lo sin explorar para seguir."), true, true);
             _guideTarget = null;
             _uxCache = null;
             return;
@@ -2078,13 +2087,13 @@ internal sealed partial class Navigator
         float arrive = _guideCat == Cat.Items ? 6f : 13f;
         if (dist < arrive)
         {
-            _say(T($"Arrived at {_guideName}", $"Llegaste a {_guideName}"));
+            Tell(PoE1Access.News.Arrivals, T($"Arrived at {_guideName}", $"Llegaste a {_guideName}"), true, true);
             _guideTarget = null;
             return;
         }
         if (!valid && dist < arrive + 4f)
         {
-            _say(T($"Arrived where {_guideName} was", $"Llegaste a donde estaba {_guideName}"));
+            Tell(PoE1Access.News.Arrivals, T($"Arrived where {_guideName} was", $"Llegaste a donde estaba {_guideName}"), true, true);
             _guideTarget = null;
             return;
         }
