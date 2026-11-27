@@ -231,6 +231,13 @@ MAPS AND THE ATLAS (NOT TESTED YET)
 Each can be turned off in the Speech submenu. In maps the mod logs every kind of object it
 finds ("Area object: ..."), so the first maps show what to fix.
 
+CLASS DESCRIPTIONS
+
+On the class screen of character creation, each class's name is followed by how it plays: its
+attributes, the weapon and skill it starts with, its side of the passive tree, and how that
+suits the mod's sounds. Moving to the next class cuts it. "Describe how each class plays on the
+class screen" in the Speech submenu turns this off.
+
 SPEECH PRIORITY
 
 "Speech priority" in the mod menu sets, for each kind of news the mod says by itself, whether it

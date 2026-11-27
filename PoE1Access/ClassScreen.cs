@@ -37,7 +37,7 @@ public partial class PoE1AccessCore
         if (now < _nextOutlinePollMs) return;
         _nextOutlinePollMs = now + 100;
         // Only while the screen asks for a class (not once one is picked and named).
-        if (_preGameState != "CreateCharacterState" || _classScreenLine.Length == 0) { _outlinedClass = -2; return; }
+        if (_preGameState != "CreateCharacterState" || _classScreenLine.Length == 0) { _outlinedClass = -2; _classNoteSaid = false; return; }
 
         int outlined = OutlinedClass();
         if (outlined == _outlinedClass) return;
@@ -48,7 +48,16 @@ public partial class PoE1AccessCore
         string name = ClassName(outlined);
         PluginLog.Write("Class outlined: " + outlined + " " + name);
         Say(name, true);
+        // How it plays (ClassDescriptions.cs), after the name; moving on cuts it.
+        if (Settings.ClassDescriptions.Value)
+        {
+            string how = ClassDescription(outlined);
+            if (how.Length > 0 && !_classNoteSaid) { how += AnyClassNote; _classNoteSaid = true; }
+            if (how.Length > 0) Say(how, false);
+        }
     }
+
+    private bool _classNoteSaid;
 
     /// <summary>The class number of the outlined Exile, or -1.</summary>
     private int OutlinedClass()

@@ -37,6 +37,8 @@ public class PoE1AccessSettings : ISettings
     public ToggleNode AtlasFinder { get; set; } = new ToggleNode(true);
     // The way through the areas to your quest, once a character has finished the campaign (QuestRoute.cs).
     public ToggleNode QuestRoute { get; set; } = new ToggleNode(true);
+    // How each class plays, after its name on the class screen (ClassDescriptions.cs).
+    public ToggleNode ClassDescriptions { get; set; } = new ToggleNode(true);
 
     // How long the hovered thing must stay the same before it is spoken (milliseconds).
     // Raise it if you hear too many half-finished announcements.

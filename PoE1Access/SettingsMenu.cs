@@ -69,6 +69,7 @@ public partial class PoE1AccessCore
                 Sw(T("Warn about dangerous map mods", "Avisar de modificadores de mapa peligrosos"), Settings.MapModWarnings),
                 Sw(T("Atlas finder on the D-pad", "Buscador del Atlas en la cruceta"), Settings.AtlasFinder),
                 Sw(T("Quest route, once you have finished the campaign", "Ruta de misión, una vez terminada la campaña"), Settings.QuestRoute),
+                Sw(T("Describe how each class plays on the class screen", "Describir cómo se juega cada clase en la pantalla de clases"), Settings.ClassDescriptions),
                 Sw(T("Passive tree finder on the D-pad", "Buscador del árbol de pasivas en la cruceta"), Settings.PassiveFinder),
                 Sw(T("Dodge warning when a monster attacks you", "Aviso para esquivar cuando un monstruo te ataca"), Settings.DodgeWarnings),
                 Sw(T("Dodge warning for every enemy, not only rares and bosses", "Aviso para esquivar con todos los enemigos, no solo raros y jefes"), Settings.DodgeWarningsAll),
