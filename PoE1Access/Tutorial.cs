@@ -200,6 +200,21 @@ public partial class PoE1AccessCore
         lessons.Add(new MenuItem { Label = T("Step by step", "Paso a paso"), Children = Guides().Select(LessonMenu).ToList() });
         // The game's own mechanics, in the order the game brings them in (Mechanics.cs).
         lessons.Add(new MenuItem { Label = T("Game mechanics", "Mecánicas del juego"), Children = MechanicsLessons().Select(LessonMenu).ToList() });
+        // Switches for the lessons that start by themselves (AutoTutorial.cs): move right to change.
+        lessons.Add(new MenuItem
+        {
+            Label = T("Tutorials for this character", "Tutoriales para este personaje"),
+            Text = T("Move right to turn them on or off.", "Muévete a la derecha para activarlos o desactivarlos."),
+            StartPractice = ToggleTutorialsForCharacter,
+            Describe = () => TutorialAnswer() == true ? T("Tutorials for this character: on", "Tutoriales para este personaje: activados") : T("Tutorials for this character: off", "Tutoriales para este personaje: desactivados"),
+        });
+        lessons.Add(new MenuItem
+        {
+            Label = T("Ask new characters about tutorials", "Preguntar a los personajes nuevos por los tutoriales"),
+            Text = T("Move right to turn it on or off.", "Muévete a la derecha para activarlo o desactivarlo."),
+            StartPractice = ToggleAskNewCharacters,
+            Describe = () => SeenHas("ask:never") ? T("Ask new characters about tutorials: off", "Preguntar a los personajes nuevos: desactivado") : T("Ask new characters about tutorials: on", "Preguntar a los personajes nuevos: activado"),
+        });
         return new MenuItem { Label = T("Tutorial", "Tutorial"), Children = lessons };
     }
 

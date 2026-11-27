@@ -82,8 +82,10 @@ An optional tutorial is the first entry of the mod menu (`PoE1Access/Tutorial.cs
 lessons on what the mod adds, read page by page, some ending with "Try it now", which closes the
 menu and waits for the player to use the mod's own L3 controls, saying when each is done. Like
 the rest of the mod it only reads and listens, and leaves the game's own buttons to the game's
-button prompts (hold L3), so it does not go out of date with the game. The first game with the
-mod says once where it is.
+button prompts (hold L3), so it does not go out of date with the game. Each new character is
+asked whether it wants the lessons to start by themselves (tap L3 yes, double tap no, hold no and
+stop asking); each character hears them from the start. The menu's last two entries turn them on
+or off for the character you play, and the question for new characters back on.
 
 ## Game mechanics and the trials
 

@@ -13,8 +13,11 @@ namespace PoE1Access;
 //
 // A few seconds into the game with a new character (level 1 or 2, not answered for yet), and on the
 // first game with the mod, it asks whether you want tutorials: tap L3 for yes, double tap for no (no
-// answer in 30 seconds asks again next time). The answer is kept for that character
-// ("answer:yes:<name>"); characters made before keep the first answer ("answer:yes"). With yes, each lesson
+// answer in 30 seconds asks again next time); hold L3 for no and never asking again. The answer is
+// kept for that character ("answer:yes:<name>"); characters made before keep the first answer
+// ("answer:yes"). Each character with its own answer hears the lessons from the start
+// ("lesson:<name>:<key>"). The Tutorial menu turns tutorials on or off for the character you play,
+// and the question for new characters back on. With yes, each lesson
 // starts the first time you meet what it is about: how the mod works at once; the scanner when you
 // start moving; the sounds when an enemy first comes near; passive points when you level up; the
 // passive tree when you open it; gems when one comes into your bag; the inventory, the stash, a
@@ -25,7 +28,7 @@ namespace PoE1Access;
 // A lesson is read page by page: tap L3 for the next page, double tap to stop (the rest wait for
 // another time), hold L3 to hear the page again. While a lesson plays these three are the
 // lesson's; everything else works as usual. Lessons wait while an enemy is near or the mod menu is
-// open, and come one at a time. A lesson heard once is not started again, on any character
+// open, and come one at a time. A lesson heard once is not started again on that character
 // (app\mechanics-seen.txt); all of them stay in the tutorial menu. "Tutorials start as you meet
 // each part of the game" in the Speech submenu turns this on or off later.
 //
@@ -57,7 +60,7 @@ public partial class PoE1AccessCore
         string who = TutorialCharacter();
         if (who.Length > 0 && SeenHas("answer:yes:" + who)) return true;
         if (who.Length > 0 && SeenHas("answer:no:" + who)) return false;
-        if (who.Length > 0 && NewCharacter()) return null;   // a new character is asked
+        if (who.Length > 0 && NewCharacter()) return SeenHas("ask:never") ? false : null;   // a new character is asked
         if (SeenHas("answer:yes")) return true;
         if (SeenHas("answer:no")) return false;
         return null;
@@ -66,8 +69,55 @@ public partial class PoE1AccessCore
     private void SaveTutorialAnswer(bool yes)
     {
         string who = TutorialCharacter();
-        SeenAdd(yes ? "answer:yes" : "answer:no");
-        if (who.Length > 0) SeenAdd((yes ? "answer:yes:" : "answer:no:") + who);
+        // The first answer ever also stands for the characters made before this question.
+        if (!SeenHas("answer:yes") && !SeenHas("answer:no")) SeenAdd(yes ? "answer:yes" : "answer:no");
+        if (who.Length == 0) return;
+        SeenRemove((yes ? "answer:no:" : "answer:yes:") + who);
+        SeenAdd((yes ? "answer:yes:" : "answer:no:") + who);
+    }
+
+    /// <summary>Whether this character has heard a lesson: its own record, or for a character
+    /// made before the question was asked per character, the shared one.</summary>
+    private bool LessonHeard(string key)
+    {
+        string who = TutorialCharacter();
+        if (who.Length > 0 && SeenHas("lesson:" + who + ":" + key)) return true;
+        bool ownAnswer = who.Length > 0 && (SeenHas("answer:yes:" + who) || SeenHas("answer:no:" + who));
+        return !ownAnswer && SeenHas("lesson:" + key);
+    }
+
+    private void MarkLessonHeard(string key)
+    {
+        string who = TutorialCharacter();
+        SeenAdd("lesson:" + key);
+        if (who.Length > 0) SeenAdd("lesson:" + who + ":" + key);
+    }
+
+    // The Tutorial menu's switches (Tutorial.cs).
+    private void ToggleTutorialsForCharacter()
+    {
+        string who = TutorialCharacter();
+        if (who.Length == 0) { Say(T("Enter the game with a character first.", "Entra antes en el juego con un personaje."), true); return; }
+        bool on = TutorialAnswer() != true;
+        SaveTutorialAnswer(on);
+        if (!on) { _lessonQueue.Clear(); _lesson = null; _practice.Clear(); }
+        PluginLog.Write("Tutorials for " + who + ": " + (on ? "on" : "off"));
+        Say(on ? T($"Tutorials on for {who}.", $"Tutoriales activados para {who}.") : T($"Tutorials off for {who}.", $"Tutoriales desactivados para {who}."), true);
+    }
+
+    private void ToggleAskNewCharacters()
+    {
+        bool never = SeenHas("ask:never");
+        if (never) SeenRemove("ask:never"); else SeenAdd("ask:never");
+        Say(never ? T("New characters will be asked about tutorials.", "Se preguntará por los tutoriales a los personajes nuevos.")
+                  : T("New characters will not be asked about tutorials.", "No se preguntará por los tutoriales a los personajes nuevos."), true);
+    }
+
+    private void SeenRemove(string key)
+    {
+        LoadMechanicsSeen();
+        if (!_mechanicsSeen.Remove(key)) return;
+        try { if (_mechanicsFile != null) File.WriteAllLines(_mechanicsFile, _mechanicsSeen); } catch { }
     }
 
     private void LoadMechanicsSeen()
@@ -98,7 +148,7 @@ public partial class PoE1AccessCore
     {
         if (!AutoTutorials) return;
         foreach (string k in keys)
-            if (!SeenHas("lesson:" + k) && !_lessonQueue.Contains(k) && _lesson?.Key != k) _lessonQueue.Add(k);
+            if (!LessonHeard(k) && !_lessonQueue.Contains(k) && _lesson?.Key != k) _lessonQueue.Add(k);
     }
 
     // The tips of Mechanics.cs and Hideout.cs, as lessons when tutorials are on.
@@ -142,10 +192,8 @@ public partial class PoE1AccessCore
         _askPending = true;
         _askedAtMs = now;
         PluginLog.Write("Tutorials asked");
-        bool heardSome = _mechanicsSeen.Any(k => k.StartsWith("lesson:", StringComparison.Ordinal));
-        Say(T("Welcome to Path of Exile access. Would you like tutorials for this character? Each one starts by itself the first time you meet what it is about, and you can stop any of them. Tap L3 for yes, double tap L3 for no.",
-              "Bienvenido a Path of Exile access. ¿Quieres tutoriales para este personaje? Cada uno empieza solo la primera vez que encuentras aquello de lo que trata, y puedes pararlos. Toca L3 para sí, toca L3 dos veces para no.") +
-            (heardSome ? T(" Lessons you have already heard do not play again; they are all in the mod menu, under Tutorial.", " Las lecciones que ya has oído no se repiten; están todas en el menú del mod, en Tutorial.") : ""), true);
+        Say(T("Welcome to Path of Exile access. Would you like tutorials for this character? Each one starts by itself the first time you meet what it is about, and you can stop any of them. Tap L3 for yes, double tap L3 for no, or hold L3 for no and to stop asking for new characters.",
+              "Bienvenido a Path of Exile access. ¿Quieres tutoriales para este personaje? Cada uno empieza solo la primera vez que encuentras aquello de lo que trata, y puedes pararlos. Toca L3 para sí, toca L3 dos veces para no, o mantén L3 para no y para dejar de preguntar con los personajes nuevos."), true);
     }
 
     /// <summary>L3 while the question or a lesson waits: true when it was theirs.</summary>
@@ -169,6 +217,15 @@ public partial class PoE1AccessCore
                 SaveTutorialAnswer(false);
                 PluginLog.Write("Tutorials: no");
                 Say(T("No tutorials. They are all in the mod menu, under Tutorial, whenever you want them.", "Sin tutoriales. Están todos en el menú del mod, en Tutorial, cuando los quieras."), true);
+                return true;
+            }
+            if (cmd == ControllerInput.Command.Hold)
+            {
+                _askPending = false;
+                SaveTutorialAnswer(false);
+                SeenAdd("ask:never");
+                PluginLog.Write("Tutorials: no, and do not ask again");
+                Say(T("No tutorials, and new characters will not be asked. Both can be changed in the mod menu, under Tutorial.", "Sin tutoriales, y no se preguntará a los personajes nuevos. Ambas cosas se pueden cambiar en el menú del mod, en Tutorial."), true);
                 return true;
             }
             return false;
@@ -202,7 +259,7 @@ public partial class PoE1AccessCore
         if (_lessonPage + 1 < _lesson.Pages.Length) { _lessonPage++; Say(LessonPageText(), true); return; }
         var done = _lesson;
         _lesson = null;
-        SeenAdd("lesson:" + done.Key);
+        MarkLessonHeard(done.Key);
         PluginLog.Write("Lesson done: " + done.Key);
         _nextLessonMs = _clock.ElapsedMilliseconds + 4000;
         if (done.Practice.Length > 0) { Say(T("End of lesson. Now try it.", "Fin de la lección. Ahora pruébalo."), true); StartPractice(done); }
