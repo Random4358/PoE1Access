@@ -9,7 +9,7 @@ using ExileCore.Shared.Enums;
 namespace PoE1Access;
 
 // Dodge warning (after Poe2Access's): when a monster starts an attack or a spell aimed at you,
-// a blade over a low gong diving into a bass drop plays from its side, louder the closer it is.
+// a sharp click and two quick metal tings play from its side, louder the closer it is.
 // By default only rare and unique monsters (the bosses among them) warn, a rare within about a
 // screen and a unique from anywhere on screen; with "every enemy" any monster close to you
 // does. It warns at the wind-up: when the monster's action turns into a new attack or spell (the
@@ -73,7 +73,7 @@ internal sealed partial class Navigator
             float gain = (rarity == MonsterRarity.Unique ? 0.75f : 0.45f) + 0.55f * near01;
             // Well above the other sounds, which are turned down while it plays.
             float vol = (EnemyVolume?.Invoke() ?? 0.7f) * Math.Min(1f, gain) * 1.6f;
-            _audio.PlayPriority("dodge2:" + pan, () => Synth.DodgeWarning(pan), vol, 450);
+            _audio.PlayPriority("dodge3:" + pan, () => Synth.DodgeWarning(pan), vol, 250);
             PluginLog.Write("Dodge warning: " + rarity + " " + internalName + " at " + dist.ToString("0") + " cells");
         }
         if (_enemyAction.Count > 400) _enemyAction.Clear();

@@ -314,50 +314,68 @@ internal static class Synth
         }
     }
 
-    // Dodge warning (after Poe2Access's recipe): a blade drawn over a low gong, diving into a
-    // deep bass drop; metal and bass, so it is not taken for the radar or the enemy voices.
+    // Dodge warning: short and sharp for a fast game (testers found the earlier blade, gong and
+    // bass drop got lost in combat). A hard click with a punch under it, then two bright
+    // metallic tings 70 ms apart, all over in a fifth of a second: the moment to dodge is the
+    // very start of the sound, and nothing else in the mod is this high, this short and this loud.
     public static float[] DodgeWarning(float pan)
     {
-        var b = Buffer(0.5);
+        var b = Buffer(0.2);
         var g = Gains(pan);
         int n = b.Length / 2;
         var rng = new Random(7);
-        double low = 0, phase = 0;
+        double prev = 0;
         for (int i = 0; i < n; i++)
         {
             double t = (double)i / SR;
-            // The blade: bright noise swept upward for 0.18 s (a rough high-pass).
-            double blade = 0;
-            if (t < 0.18)
+            double v = 0;
+            // The click: 4 ms of high-passed noise, the edge that is heard first.
+            if (t < 0.004)
             {
                 double white = rng.NextDouble() * 2 - 1;
-                double hp = white - low;
-                low += (white - low) * (0.15 + 0.6 * t / 0.18);
-                double env = Math.Min(1, t / 0.01) * Math.Max(0, 1 - t / 0.18);
-                blade = hp * env * 0.35;
+                v += (white - prev) * 0.5 * (1 - t / 0.004);
+                prev = white;
             }
-            // The drop: a sine falling from 180 to 45 Hz from 0.12 s, the moment to dodge.
-            double drop = 0;
-            if (t >= 0.12)
+            // The punch: a 40 ms thump falling from 220 to 90 Hz, felt more than heard.
+            if (t < 0.04)
             {
-                double u = (t - 0.12) / 0.36;
-                double f = 180 * Math.Pow(45.0 / 180, Math.Min(1, u));
-                phase += 2 * Math.PI * f / SR;
-                double env = Math.Min(1, (t - 0.12) / 0.008) * Math.Max(0, 1 - u);
-                drop = Math.Tanh(2.2 * Math.Sin(phase)) * env * 0.55;
+                double f = 220 - 130 * t / 0.04;
+                v += Math.Sin(2 * Math.PI * f * t) * Math.Exp(-t / 0.015) * 0.45;
             }
-            // The ring: a bright metallic strike at the start that cuts through combat noise
-            // (the low drop alone was buried under the game's sounds).
-            double ring = 0;
-            if (t < 0.22)
+            // Two tings: hard-edged (driven) metal at 2.6 and 3.5 kHz, the second a step higher.
+            foreach (var (at, f) in new[] { (0.0, 2637.0), (0.07, 3136.0) })
             {
-                double env = Math.Min(1, t / 0.002) * Math.Exp(-t / 0.06);
-                ring = (Math.Sin(2 * Math.PI * 1760 * t) + 0.6 * Math.Sin(2 * Math.PI * 2637 * t) + 0.35 * Math.Sin(2 * Math.PI * 3951 * t)) * env * 0.22;
+                double u = t - at;
+                if (u < 0 || u > 0.12) continue;
+                double env = Math.Min(1, u / 0.0008) * Math.Exp(-u / 0.035);
+                double tone = Math.Sin(2 * Math.PI * f * u) + 0.5 * Math.Sin(2 * Math.PI * f * 1.34 * u) + 0.25 * Math.Sin(2 * Math.PI * f * 2.0 * u);
+                v += Math.Tanh(1.8 * tone) * env * 0.32;
             }
-            Put(b, i, (float)(blade + drop + ring), g);
+            Put(b, i, (float)v, g);
         }
-        // The gong under it.
-        return Mix(b, Bell(pan, 98, new[] { 1.0, 2.02, 2.76, 4.07 }, 0.12, 0.22, 0.0));
+        return b;
+    }
+
+    // A tutorial step done: a quick bright "ding-dong" downward, heard at once, before speech.
+    public static float[] StepDone()
+    {
+        var b = Buffer(0.25);
+        var g = Gains(0f);
+        int n = b.Length / 2;
+        for (int i = 0; i < n; i++)
+        {
+            double t = (double)i / SR;
+            double v = 0;
+            foreach (var (at, f) in new[] { (0.0, 1568.0), (0.08, 1175.0) })
+            {
+                double u = t - at;
+                if (u < 0) continue;
+                double env = Math.Min(1, u / 0.003) * Math.Exp(-u / 0.07);
+                v += (Math.Sin(2 * Math.PI * f * u) + 0.3 * Math.Sin(2 * Math.PI * f * 2 * u)) * env * 0.3;
+            }
+            Put(b, i, (float)v, g);
+        }
+        return b;
     }
 
     // ---- Things worth walking to, harmful ground and your own states (after Poe2Access's list) ----

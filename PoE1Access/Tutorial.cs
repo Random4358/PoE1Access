@@ -58,8 +58,8 @@ public partial class PoE1AccessCore
                   "Cada sonido llega desde el lado en que está su origen, más agudo cuando está arriba de la pantalla y más grave cuando está abajo."),
                 T("The wall radar: a tock means a wall closes the way on that side, a breath means the way opens again, and a tin note means an exit lies that way. Pips over the radar point to ground you have not explored.",
                   "El radar de paredes: un toc significa que una pared cierra el paso por ese lado, un soplo que el paso se abre otra vez, y una nota metálica que hay una salida en esa dirección. Los pitidos sobre el radar señalan terreno sin explorar."),
-                T("Enemies growl, faster as they get closer; magic and rare ones buzz on top and bosses ring like metal. Two rising notes mean an enemy is within melee reach. A blade and gong is a dodge warning: a strong monster is attacking you.",
-                  "Los enemigos gruñen, más rápido cuanto más cerca están; los mágicos y raros zumban encima y los jefes suenan como metal. Dos notas ascendentes significan que un enemigo está a tu alcance cuerpo a cuerpo. Una cuchilla y un gong es un aviso para esquivar: un monstruo fuerte te ataca."),
+                T("Enemies growl, faster as they get closer; magic and rare ones buzz on top and bosses ring like metal. Two rising notes mean an enemy is within melee reach. A sharp click and two quick tings is a dodge warning: a strong monster is attacking you.",
+                  "Los enemigos gruñen, más rápido cuanto más cerca están; los mágicos y raros zumban encima y los jefes suenan como metal. Dos notas ascendentes significan que un enemigo está a tu alcance cuerpo a cuerpo. Un clic seco y dos tintineos rápidos son un aviso para esquivar: un monstruo fuerte te ataca."),
                 T("Items on the ground keep sounding from where they lie, faster as you get closer. Chests knock, and shrines, waypoints, portals and the stash have sounds of their own.",
                   "Los objetos en el suelo siguen sonando desde donde están, más rápido cuanto más te acercas. Los cofres golpean, y los santuarios, transportadores, portales y el alijo tienen sus propios sonidos."),
                 T("To hear every sound with its meaning, open the Sound glossary at the end of this menu: move right on a sound to play it.",
@@ -236,7 +236,10 @@ public partial class PoE1AccessCore
     {
         if (_practice.Count == 0 || _practice[0].Goal != goal) return;
         _practice.RemoveAt(0);
-        if (_practice.Count > 0) { Say(T("Well done. ", "Muy bien. ") + _practice[0].Ask, false); return; }
+        // Heard at once, while the control's own answer is still being spoken (the spoken
+        // "well done" waited behind it, so the step felt slow to register).
+        Try(() => { _audio?.Play("stepdone", Synth.StepDone, 0.8f); return true; }, false);
+        if (_practice.Count > 0) { Say(_practice[0].Ask, false); return; }
         PluginLog.Write("Tutorial practice done: " + _practiceLesson);
         if (AutoTutorials) { Say(T("Well done, that is the lesson.", "Muy bien, esa es la lección."), false); return; }
         Say(T("Well done, that is the lesson. Hold L3 for a second and a half for the menu and the next lesson.",

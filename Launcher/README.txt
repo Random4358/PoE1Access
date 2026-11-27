@@ -23,7 +23,7 @@ matter most sound (uniques first, then magic and rare, then the nearest); enemie
 stay quiet, uniques too. When an enemy comes within melee reach, two quick rising notes play
 from its side (ReachPing, ReachDistance); they play again once every enemy has stepped back.
 When a rare or unique monster starts an attack or spell aimed at you, a dodge warning plays from
-its side: a blade over a low gong dropping into a bass hit, louder the closer it is
+its side: a sharp click and two quick metal tings, louder the closer it is
 (DodgeWarnings). "Dodge warning for every enemy" in the F3 menu adds every monster within a few
 steps (DodgeWarningsAll).
 Things worth walking to sound from their side, faster and louder as you get closer, within about

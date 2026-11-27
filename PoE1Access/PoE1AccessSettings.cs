@@ -86,7 +86,7 @@ public class PoE1AccessSettings : ISettings
     public RangeNode<int> EnemyVolume { get; set; } = new RangeNode<int>(70, 0, 200);
     // Name enemies as they come into view, a pack in one line: "Zombie, 3, up right".
     public ToggleNode AnnounceEnemies { get; set; } = new ToggleNode(true);
-    // A blade-and-bass cue from the side of a monster starting an attack aimed at you.
+    // A sharp click-and-ting cue from the side of a monster starting an attack aimed at you.
     public ToggleNode DodgeWarnings { get; set; } = new ToggleNode(true);
     // Off: rare and unique monsters (bosses) only. On: every monster close to you.
     public ToggleNode DodgeWarningsAll { get; set; } = new ToggleNode(false);

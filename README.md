@@ -28,7 +28,7 @@ memory. The mod only reads: it never changes the game and never presses anything
 - **Sounds:** enemies (growl, buzz for magic and rare, ring for unique), NPCs and players,
   items on the ground with the game's own drop sound for each kind of item (played from your
   installed game; the game's unique drop over uniques, a rarity tone over magic and rare), a targeting blip and a melee reach ping, and a dodge
-  warning (a blade over a low gong dropping into a bass hit) from the side of a rare or unique
+  warning (a sharp click and two quick metal tings) from the side of a rare or unique
   monster starting an attack aimed at you, or of any monster close by if you choose. Things
   worth walking to sound from their side, faster as you get closer: chests (a wooden knock),
   shrines (a shimmer), the nearest waypoint (a drone), portal (a swirl), exit (a rush of air)
