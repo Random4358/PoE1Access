@@ -11,8 +11,10 @@ namespace PoE1Access;
 
 // Tutorials that start by themselves.
 //
-// A few seconds into your first game with the mod, it asks whether you want tutorials: tap L3 for
-// yes, double tap for no (no answer in 30 seconds asks again next time). With yes, each lesson
+// A few seconds into the game with a new character (level 1 or 2, not answered for yet), and on the
+// first game with the mod, it asks whether you want tutorials: tap L3 for yes, double tap for no (no
+// answer in 30 seconds asks again next time). The answer is kept for that character
+// ("answer:yes:<name>"); characters made before keep the first answer ("answer:yes"). With yes, each lesson
 // starts the first time you meet what it is about: how the mod works at once; the scanner when you
 // start moving; the sounds when an enemy first comes near; passive points when you level up; the
 // passive tree when you open it; gems when one comes into your bag; the inventory, the stash, a
@@ -38,7 +40,35 @@ public partial class PoE1AccessCore
     private Vector2 _startPos = new Vector2(-1, -1);
     private int _tutLevel = -1;
 
-    private bool AutoTutorials => Settings.AutoTutorials.Value && SeenHas("answer:yes");
+    private bool AutoTutorials => Settings.AutoTutorials.Value && TutorialAnswer() == true;
+
+    private string _tutChar;   // the character the question was last looked at for
+
+    private string TutorialCharacter() =>
+        Try(() => GetComp<ExileCore.PoEMemory.Components.Player>(GameController.Player)?.PlayerName, null) ?? "";
+
+    private bool NewCharacter() =>
+        Try(() => GetComp<ExileCore.PoEMemory.Components.Player>(GameController.Player)?.Level ?? 0, 0) is > 0 and <= 2;
+
+    /// <summary>This character's answer: its own, else (an older character) the first answer
+    /// given; null when it is to be asked.</summary>
+    private bool? TutorialAnswer()
+    {
+        string who = TutorialCharacter();
+        if (who.Length > 0 && SeenHas("answer:yes:" + who)) return true;
+        if (who.Length > 0 && SeenHas("answer:no:" + who)) return false;
+        if (who.Length > 0 && NewCharacter()) return null;   // a new character is asked
+        if (SeenHas("answer:yes")) return true;
+        if (SeenHas("answer:no")) return false;
+        return null;
+    }
+
+    private void SaveTutorialAnswer(bool yes)
+    {
+        string who = TutorialCharacter();
+        SeenAdd(yes ? "answer:yes" : "answer:no");
+        if (who.Length > 0) SeenAdd((yes ? "answer:yes:" : "answer:no:") + who);
+    }
 
     private void LoadMechanicsSeen()
     {
@@ -93,19 +123,29 @@ public partial class PoE1AccessCore
     private void AskTutorials(long now)
     {
         if (_inGameSinceMs < 0) _inGameSinceMs = now;
+        // Another character: it may be asked again, a few seconds after it enters.
+        string who = TutorialCharacter();
+        if (who.Length == 0) return;
+        if (who != _tutChar)
+        {
+            if (_tutChar != null) { _askedThisSession = false; _askPending = false; _inGameSinceMs = now; _lessonQueue.Clear(); _lesson = null; }
+            _tutChar = who;
+        }
         if (_askPending && now - _askedAtMs > 30000)
         {
             _askPending = false;
             Say(T("No answer. You can turn tutorials on in the mod menu, under Speech, or answer next time.", "Sin respuesta. Puedes activar los tutoriales en el menú del mod, en Voz, o responder la próxima vez."), false);
         }
-        if (_askedThisSession || SeenHas("answer:yes") || SeenHas("answer:no") || !Settings.AutoTutorials.Value) return;
+        if (_askedThisSession || TutorialAnswer() != null || !Settings.AutoTutorials.Value) return;
         if (now - _inGameSinceMs < 8000 || (_nav != null && _nav.EnemyNear(45f))) return;
         _askedThisSession = true;
         _askPending = true;
         _askedAtMs = now;
         PluginLog.Write("Tutorials asked");
-        Say(T("Welcome to Path of Exile access. Would you like tutorials? Each one starts by itself the first time you meet what it is about, and you can stop any of them. Tap L3 for yes, double tap L3 for no.",
-              "Bienvenido a Path of Exile access. ¿Quieres tutoriales? Cada uno empieza solo la primera vez que encuentras aquello de lo que trata, y puedes pararlos. Toca L3 para sí, toca L3 dos veces para no."), true);
+        bool heardSome = _mechanicsSeen.Any(k => k.StartsWith("lesson:", StringComparison.Ordinal));
+        Say(T("Welcome to Path of Exile access. Would you like tutorials for this character? Each one starts by itself the first time you meet what it is about, and you can stop any of them. Tap L3 for yes, double tap L3 for no.",
+              "Bienvenido a Path of Exile access. ¿Quieres tutoriales para este personaje? Cada uno empieza solo la primera vez que encuentras aquello de lo que trata, y puedes pararlos. Toca L3 para sí, toca L3 dos veces para no.") +
+            (heardSome ? T(" Lessons you have already heard do not play again; they are all in the mod menu, under Tutorial.", " Las lecciones que ya has oído no se repiten; están todas en el menú del mod, en Tutorial.") : ""), true);
     }
 
     /// <summary>L3 while the question or a lesson waits: true when it was theirs.</summary>
@@ -116,7 +156,7 @@ public partial class PoE1AccessCore
             if (cmd == ControllerInput.Command.Tap)
             {
                 _askPending = false;
-                SeenAdd("answer:yes");
+                SaveTutorialAnswer(true);
                 PluginLog.Write("Tutorials: yes");
                 Say(T("Tutorials on. The first starts now.", "Tutoriales activados. El primero empieza ahora."), true);
                 Meet("basics");
@@ -126,7 +166,7 @@ public partial class PoE1AccessCore
             if (cmd == ControllerInput.Command.DoubleTap)
             {
                 _askPending = false;
-                SeenAdd("answer:no");
+                SaveTutorialAnswer(false);
                 PluginLog.Write("Tutorials: no");
                 Say(T("No tutorials. They are all in the mod menu, under Tutorial, whenever you want them.", "Sin tutoriales. Están todos en el menú del mod, en Tutorial, cuando los quieras."), true);
                 return true;

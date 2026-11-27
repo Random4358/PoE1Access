@@ -128,8 +128,8 @@ simply starts the version you have. After an update it reads what changed (the r
 every version since the last one you had), and keeps them in app\whats-new.txt.
 
 TUTORIAL (OPTIONAL)
-A few seconds into your first game with the mod, it asks whether you want tutorials: tap L3 for
-yes, double tap L3 for no. With yes, each lesson starts by itself the first time you meet what
+A few seconds into your first game with the mod, and again with each new character, it asks
+whether you want tutorials for that character: tap L3 for yes, double tap L3 for no. With yes, each lesson starts by itself the first time you meet what
 it is about: how the mod works at once, the scanner when you start moving, the sounds when an
 enemy first comes near, passive points when you level up, the passive tree, inventory, stash,
 character sheet, a vendor and skill binding the first time you open them, gems when one comes
