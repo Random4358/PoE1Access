@@ -306,7 +306,7 @@ SPEECH PRIORITY
 waits its turn, cuts in when urgent, cuts in, or cuts in and cannot be cut off (other news waits
 1.5 seconds behind it): harmful states beginning (cannot be cut off) and ending (cuts in), low
 life and mana (urgent under half life), a boss's life (urgent at 30 percent and when defeated),
-enemy names (urgent for the one you aim at and for rares and uniques), quest route, things you
+enemy names (urgent for the one you aim at and for rares and bosses), quest route, things you
 walk up to, changes in your bag, charges (these wait), arriving with the guide (cannot be cut
 off) and level up (cuts in). What you ask for with the controller always cuts in.
 

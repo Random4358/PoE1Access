@@ -493,7 +493,8 @@ internal sealed partial class Navigator
                     {
                         MonsterRarity.Magic => T(", magic", ", mágico"),
                         MonsterRarity.Rare => T(", rare", ", raro"),
-                        MonsterRarity.Unique => T(", unique", ", único"),
+                        // Unique monsters are the game's bosses (story and map bosses): said as such.
+                        MonsterRarity.Unique => T(", boss", ", jefe"),
                         _ => "",
                     };
                     var mid = new Vector2(grp.Average(x => x.G.X), grp.Average(x => x.G.Y));
@@ -1844,7 +1845,7 @@ internal sealed partial class Navigator
                 {
                     MonsterRarity.Magic => T($"magic {name}", $"{name} mágico"),
                     MonsterRarity.Rare => T($"rare {name}", $"{name} raro"),
-                    MonsterRarity.Unique => T($"unique {name}", $"{name} único"),
+                    MonsterRarity.Unique => T($"boss {name}", $"jefe {name}"),
                     _ => name,
                 };
                 return rar;
