@@ -21,7 +21,7 @@ namespace PoE1Access;
 // along nodes you do not have, as for "N points away".
 public partial class PoE1AccessCore
 {
-    private static readonly string[] FinderLists = { "Position", "Keystones", "Notables", "Jewel sockets", "Next to your nodes" };
+    private static readonly string[] FinderLists = { "Position", "Keystones", "Notables", "Jewel sockets", "Next to your nodes", "Your build" };
     private int _finderList, _finderIndex = -1;
     private long _finderTarget;
     private Element _passiveHover;
@@ -44,6 +44,7 @@ public partial class PoE1AccessCore
         2 => T("Notables", "Notables"),
         3 => T("Jewel sockets", "Engarces de joya"),
         4 => T("Next to your nodes", "Junto a tus nodos"),
+        5 => T("Your build", "Tu build"),
         _ => FinderLists[i],
     };
 
@@ -75,6 +76,13 @@ public partial class PoE1AccessCore
     {
         var nodes = FinderNodes(_finderList);
         string list = FinderListName(_finderList);
+        if (nodes.Count == 0 && _finderList == 5)
+        {
+            // The Path of Building build followed (BuildFollow.cs).
+            Say(_build == null ? T("Your build: none loaded. Load one in the mod menu, under Build to follow.", "Tu build: ninguna cargada. Carga una en el menú del mod, en Build a seguir.")
+                : T($"Your build: every passive of {SpecName(FollowedSpec())} is taken", $"Tu build: todas las pasivas de {SpecName(FollowedSpec())} están tomadas"), true);
+            return;
+        }
         if (nodes.Count == 0) { Say(T($"{list}: none on this tree", $"{list}: ninguno en este árbol"), true); return; }
         _finderIndex = _finderIndex < 0 ? 0 : (_finderIndex + step + nodes.Count) % nodes.Count;
         var node = nodes[_finderIndex];
@@ -192,6 +200,7 @@ public partial class PoE1AccessCore
         LearnPassiveRows();
         var costs = PassiveCosts(elements, links, out var parents);
         var mem = Mem;
+        var buildNodes = list == 5 ? BuildNodes() : null;
         foreach (var kv in elements)
         {
             long row = kv.Key;
@@ -202,6 +211,7 @@ public partial class PoE1AccessCore
                 2 => Try(() => mem.Read<byte>(row + 0x4B), (byte)0) == 1 && Try(() => mem.Read<byte>(row + 0x4A), (byte)0) != 1,
                 3 => _passiveIdTextOfRow.TryGetValue(row, out string pid) && pid.StartsWith("jewel_slot", StringComparison.OrdinalIgnoreCase),
                 4 => cost == 1,
+                5 => cost > 0 && _passiveIdOfRow.TryGetValue(row, out ushort bid) && buildNodes.Contains(bid),
                 _ => false,
             };
             if (!keep) continue;

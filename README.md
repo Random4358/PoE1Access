@@ -87,6 +87,15 @@ asked whether it wants the lessons to start by themselves (tap L3 yes, double ta
 stop asking); each character hears them from the start. The menu's last two entries turn them on
 or off for the character you play, and the question for new characters back on.
 
+## Following a Path of Building build
+
+`PoE1Access/BuildPlan.cs` unpacks a Path of Building build code (zlib-compressed XML in URL-safe
+base64), from the clipboard or a pobb.in or pastebin link: class, ascendancy, every passive tree
+and skill set, gems, gear, bandit and notes. `PoE1Access/BuildFollow.cs` compares it with your
+character: a "Your build" list in the passive tree finder, the next passive on levelling up, your
+gems against each skill setup, and passives off the build. Everything is in the mod menu under
+"Build to follow (Path of Building)". Nothing is allocated or socketed for you.
+
 ## Game mechanics and the trials
 
 `PoE1Access/Mechanics.cs` holds the tutorial's Game mechanics lessons (the game's own systems,

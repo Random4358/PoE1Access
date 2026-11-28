@@ -234,6 +234,24 @@ MAPS AND THE ATLAS (NOT TESTED YET)
 Each can be turned off in the Speech submenu. In maps the mod logs every kind of object it
 finds ("Area object: ..."), so the first maps show what to fix.
 
+FOLLOWING A PATH OF BUILDING BUILD
+
+Path of Building cannot be read by a screen reader, but the builds it shares can. Copy a build
+code, or a pobb.in or pastebin link to one (guides give these), then in the mod menu open "Build
+to follow (Path of Building)" and choose "Load a build from the clipboard". After that:
+- "About the build": the class and ascendancy, the bandit, each skill setup with its gems, the
+  gear and the names of its passive trees. "Read the notes" reads the guide's notes.
+- In the passive tree, the D-pad's lists have one more, "Your build": the build's passives you
+  have not taken, fewest points first, each with the way to it, as the other lists.
+- When you level up, the build's next passive is said ("Build: next passive, Life").
+- "Your gems against the build": for each skill setup, where you have it and which of its gems
+  are missing or not linked with it.
+- "Passives you have that the build does not take".
+A leveling guide has several trees ("Act 1 End", "End Act 2"...) and skill sets: "Passive tree
+to follow" and "Skill set to follow" choose one; by itself the tree is the first with passives
+you have not taken yet. The build is kept until you load another or choose "Forget the build".
+Nothing is allocated or socketed for you.
+
 CLASS DESCRIPTIONS
 
 On the class screen of character creation, each class's name is followed by how it plays: its

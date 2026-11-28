@@ -41,6 +41,8 @@ public class PoE1AccessSettings : ISettings
     public ToggleNode ClassDescriptions { get; set; } = new ToggleNode(true);
     // "Log in button, 2 of 5" for a selected button (ButtonPlace.cs).
     public ToggleNode SayButtons { get; set; } = new ToggleNode(true);
+    // On levelling up, the followed build's next passive (BuildFollow.cs).
+    public ToggleNode BuildNextPassive { get; set; } = new ToggleNode(true);
 
     // How long the hovered thing must stay the same before it is spoken (milliseconds).
     // Raise it if you hear too many half-finished announcements.

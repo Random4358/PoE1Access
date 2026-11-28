@@ -177,6 +177,12 @@ public partial class PoE1AccessCore
             {
                 _audio?.Play("levelup", Synth.LevelUp, vol);
                 SayNews(News.LevelUp, T($"Level {level}", $"Nivel {level}"), true);
+                // The Path of Building build followed: where its next passive is (BuildFollow.cs).
+                if (_build != null && Settings.BuildNextPassive.Value)
+                {
+                    string next = Try(BuildNextPassiveText, "");
+                    if (next.Length > 0) Say(next, false);
+                }
             }
             _lastLevel = level;
         }
