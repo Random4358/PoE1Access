@@ -286,8 +286,11 @@ public partial class PoE1AccessCore
         var cost = new Dictionary<long, int>();
         parents = new Dictionary<long, long>();
         var queue = new Queue<long>();
-        foreach (var kv in elements)
-            if (_passiveIdOfRow.TryGetValue(kv.Key, out ushort pid) && allocated.Contains(pid)) { cost[kv.Key] = 0; queue.Enqueue(kv.Key); }
+        // From every node you have, also those the tree draws no element for: your class's
+        // starting node is not among the tree's elements (seen 28 Nov 2026: at level 1 every list
+        // was empty although the start was counted as yours).
+        foreach (var kv in _passiveIdOfRow)
+            if (allocated.Contains(kv.Value) && (elements.ContainsKey(kv.Key) || links.ContainsKey(kv.Key))) { cost[kv.Key] = 0; queue.Enqueue(kv.Key); }
         foreach (var kv in elements)
             if (!cost.ContainsKey(kv.Key) && Try(() => kv.Value.AsObject<TreePassiveElement>().CanAllocate, false))
             { cost[kv.Key] = 1; parents[kv.Key] = 0; queue.Enqueue(kv.Key); }

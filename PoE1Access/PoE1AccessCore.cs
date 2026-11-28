@@ -2375,12 +2375,14 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
         bool allocated = false;
         var ids = GameController.IngameState.ServerData?.PassiveSkillIds;
         if (ids != null) allocated = ids.Contains((ushort)skill.PassiveId);
+        // "Linked" counts your class's starting node too (PassiveFinder.cs).
+        var have = AllocatedPassives();
 
         string notLinkedText = T("not linked", "sin enlazar");
         string status = allocated ? T("allocated", "asignada")
             : node.CanAllocate ? T("can be allocated", "se puede asignar")
-            : Try(() => _passiveLinks != null && _passiveLinks.TryGetValue(skill.Address, out var near) && ids != null &&
-                        near.Any(o => _passiveIdOfRow.TryGetValue(o, out ushort op) && ids.Contains(op)), false) ? T("linked", "enlazada")
+            : Try(() => _passiveLinks != null && _passiveLinks.TryGetValue(skill.Address, out var near) &&
+                        near.Any(o => _passiveIdOfRow.TryGetValue(o, out ushort op) && have.Contains(op)), false) ? T("linked", "enlazada")
             : notLinkedText;
 
         // Class starts are stored as "MARAUDER", "SIX" (Shadow) and "Seven" (Scion).
