@@ -326,7 +326,22 @@ public partial class PoE1AccessCore
                 }
             }
 
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PathOfBuilding>\n" +
+        // Where you are in the campaign, which Path of Building cannot know: it takes the
+        // resistance penalty of the end of the campaign (-60) and level 84 enemies by default,
+        // which gave -60 resistances and a 6% chance to hit on a level 2 character (28 Nov 2026).
+        // The penalty: none in Acts 1 to 5, -30 in Acts 6 to 10, -60 after; enemies of the area's level.
+        var area = Try(() => GameController.Area.CurrentArea, null);
+        int act = Try(() => area?.Area?.Act ?? 0, 0);
+        string areaId = Try(() => area?.Area?.Id, "") ?? "";
+        int areaLevel = Try(() => area?.RealLevel ?? 0, 0);
+        bool endgame = act >= 11 || areaId.StartsWith("Map", StringComparison.OrdinalIgnoreCase);
+        int penalty = endgame ? -60 : act >= 6 ? -30 : 0;
+        var config = new StringBuilder("<Config activeConfigSet=\"1\"><ConfigSet id=\"1\" title=\"Default\">");
+        config.Append("<Input name=\"resistancePenalty\" number=\"").Append(penalty).Append("\"/>");
+        if (areaLevel > 0) config.Append("<Input name=\"enemyLevel\" number=\"").Append(areaLevel).Append("\"/>");
+        config.Append("</ConfigSet></Config>\n");
+
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PathOfBuilding>\n" + config +
                $"<Build level=\"{level}\" className=\"{Classes[classId].English}\" ascendClassName=\"None\" mainSocketGroup=\"{mainGroup}\" targetVersion=\"3_0\" bandit=\"None\"/>\n" +
                $"<Tree activeSpec=\"1\"><Spec treeVersion=\"LATEST\" classId=\"{classId}\" ascendClassId=\"0\" nodes=\"{nodes}\"/></Tree>\n" +
                $"<Skills activeSkillSet=\"1\"><SkillSet id=\"1\">\n{skills}</SkillSet></Skills>\n" +
