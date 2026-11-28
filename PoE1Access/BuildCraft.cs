@@ -449,6 +449,9 @@ public partial class PoE1AccessCore
                 A(T("Copy your character as a build code", "Copiar tu personaje como código de build"), T("Move right.", "Muévete a la derecha."), () => CopyCode(false)),
                 A(T("Clear your plan", "Borrar tu plan"), T("Move right.", "Muévete a la derecha."), ClearPlan),
                 A(T("Skill Path of Building calculates", "Habilidad que calcula Path of Building"), T("Move right for the next of your skills.", "Muévete a la derecha para la siguiente de tus habilidades."), CycleMainSkill, DescribeMainSkill),
+                // The enemy your character is calculated against (PoBCalc.cs).
+                new MenuItem { Label = T("Enemy Path of Building calculates against", "Enemigo contra el que calcula Path of Building"), Range = Settings.PoBEnemyType, Step = 1, Words = EnemyTypeWords },
+                new MenuItem { Label = T("Enemy level", "Nivel del enemigo"), Range = Settings.PoBEnemyLevel, Step = 1, Words = EnemyLevelWords },
                 supports,
             },
         };

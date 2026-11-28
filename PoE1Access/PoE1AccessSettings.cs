@@ -43,6 +43,11 @@ public class PoE1AccessSettings : ISettings
     public ToggleNode SayButtons { get; set; } = new ToggleNode(true);
     // On levelling up, the followed build's next passive (BuildFollow.cs).
     public ToggleNode BuildNextPassive { get; set; } = new ToggleNode(true);
+    // The enemy Path of Building calculates your character against (PoBCalc.cs): 0 an ordinary
+    // monster, 1 rare or unique, 2 standard boss, 3 Guardian or Pinnacle boss, 4 Uber Pinnacle boss;
+    // its level, 0 for the area's.
+    public RangeNode<int> PoBEnemyType { get; set; } = new RangeNode<int>(0, 0, 4);
+    public RangeNode<int> PoBEnemyLevel { get; set; } = new RangeNode<int>(0, 0, 85);
 
     // How long the hovered thing must stay the same before it is spoken (milliseconds).
     // Raise it if you hear too many half-finished announcements.

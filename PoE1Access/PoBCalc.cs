@@ -140,7 +140,10 @@ public partial class PoE1AccessCore
     {
         string xml = Try(CharacterXml, null);
         if (xml == null) { Say(T("Enter the game with your character first.", "Entra antes en el juego con tu personaje."), true); return; }
-        RunPoB(xml, "character", T("Your character", "Tu personaje"));
+        // Which enemy, so the numbers are heard with what they are against.
+        string against = T($"against {EnemyTypeWords(Settings.PoBEnemyType.Value)} of {EnemyLevelWords(Settings.PoBEnemyLevel.Value)}",
+                           $"contra {EnemyTypeWords(Settings.PoBEnemyType.Value)} de {EnemyLevelWords(Settings.PoBEnemyLevel.Value)}");
+        RunPoB(xml, "character", T($"Your character, {against}", $"Tu personaje, {against}"));
     }
 
     private void RunPoB(string xml, string mode, string who)
@@ -381,15 +384,31 @@ public partial class PoE1AccessCore
     }
 
     /// <summary>A character model as a Path of Building file.</summary>
+    private static string EnemyTypeWords(int v) => v switch
+    {
+        1 => T("a rare or unique monster", "un monstruo raro o único"),
+        2 => T("a standard boss", "un jefe normal"),
+        3 => T("a Guardian or Pinnacle boss", "un jefe guardián o de cumbre"),
+        4 => T("an Uber Pinnacle boss", "un jefe de cumbre uber"),
+        _ => T("an ordinary monster", "un monstruo normal"),
+    };
+
+    private static string EnemyLevelWords(int v) => v <= 0 ? T("the area's level", "el nivel del área") : T($"level {v}", $"nivel {v}");
+
     private string ModelXml(CharModel m)
     {
         var config = new StringBuilder("<Config activeConfigSet=\"1\"><ConfigSet id=\"1\" title=\"Default\">");
         config.Append("<Input name=\"resistancePenalty\" number=\"").Append(m.Penalty).Append("\"/>");
-        if (m.EnemyLevel > 0) config.Append("<Input name=\"enemyLevel\" number=\"").Append(m.EnemyLevel).Append("\"/>");
-        // An ordinary monster: Path of Building's default enemy is a Guardian or Pinnacle boss, level
-        // 84 whatever your level, which gave a level 2 character a 6% chance to hit and 3 damage
-        // per second where the game's skill said 28 (28 Nov 2026).
-        config.Append("<Input name=\"enemyIsBoss\" string=\"None\"/>");
+        // The enemy, as chosen in the Build crafting menu: by default an ordinary monster of the
+        // area's level. Path of Building's own default is a Guardian or Pinnacle boss, level 84
+        // whatever your level, which gave a level 2 character a 6% chance to hit and 3 damage per
+        // second where the game's skill said 28 (28 Nov 2026).
+        int enemyLevel = Settings.PoBEnemyLevel.Value > 0 ? Settings.PoBEnemyLevel.Value : m.EnemyLevel;
+        if (enemyLevel > 0) config.Append("<Input name=\"enemyLevel\" number=\"").Append(enemyLevel).Append("\"/>");
+        int kind = Settings.PoBEnemyType.Value;
+        string boss = kind switch { 2 => "Boss", 3 => "Pinnacle", 4 => "Uber", _ => "None" };
+        config.Append("<Input name=\"enemyIsBoss\" string=\"").Append(boss).Append("\"/>");
+        if (kind == 1) config.Append("<Input name=\"conditionEnemyRareOrUnique\" boolean=\"true\"/>");
         config.Append("</ConfigSet></Config>\n");
 
         var items = new StringBuilder();
