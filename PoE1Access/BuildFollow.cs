@@ -47,6 +47,7 @@ public partial class PoE1AccessCore
             if (xml == null) return;
             _build = BuildPlan.Parse(xml);
             if (_build == null) return;
+            _buildXml = xml;
             _buildSkillSet = _build.ActiveSkillSet;
             string choice = AppFile("build-choice.txt");
             if (File.Exists(choice))
@@ -98,6 +99,7 @@ public partial class PoE1AccessCore
     private void PollBuild()
     {
         LoadSavedBuild();
+        PollPoB();
         string err = _buildPendingError;
         if (err != null)
         {
@@ -113,6 +115,8 @@ public partial class PoE1AccessCore
         try { if (xml != null) plan = BuildPlan.Parse(xml); } catch (Exception ex) { PluginLog.Write("Build: not read: " + ex.Message); }
         if (plan == null) { Say(T("That is not a Path of Building build code.", "Eso no es un código de build de Path of Building."), true); return; }
         _build = plan;
+        _buildXml = xml;
+        _pobBuildResult = null;
         _buildSpecChoice = -1;
         _buildSkillSet = plan.ActiveSkillSet;
         try { File.WriteAllText(AppFile("build-code.txt"), code.Trim()); } catch { }
@@ -228,6 +232,8 @@ public partial class PoE1AccessCore
     private void ForgetBuild()
     {
         _build = null;
+        _buildXml = null;
+        _pobBuildResult = null;
         try { File.Delete(AppFile("build-code.txt")); File.Delete(AppFile("build-choice.txt")); } catch { }
         Say(T("Build forgotten.", "Build olvidada."), true);
     }
@@ -393,6 +399,9 @@ public partial class PoE1AccessCore
                 A(T("Your gems against the build", "Tus gemas frente a la build"), right, SayGemsAgainstBuild),
                 A(T("Passives you have that the build does not take", "Pasivas tuyas que la build no toma"), right, SayPassivesOffBuild),
                 A(T("Read the notes", "Leer las notas"), right, SayBuildNotes),
+                // Path of Building's own numbers (PoBCalc.cs); Path of Building must be installed.
+                A(T("Path of Building: the build's numbers", "Path of Building: los números de la build"), T("Move right. It takes a few seconds.", "Muévete a la derecha. Tarda unos segundos."), CalculateBuildWithPoB),
+                A(T("Path of Building: your character's numbers", "Path of Building: los números de tu personaje"), T("Move right. It takes a few seconds.", "Muévete a la derecha. Tarda unos segundos."), CalculateCharacterWithPoB),
                 A(T("Forget the build", "Olvidar la build"), right, ForgetBuild),
             },
         };

@@ -96,6 +96,11 @@ character: a "Your build" list in the passive tree finder, the next passive on l
 gems against each skill setup, and passives off the build. Everything is in the mod menu under
 "Build to follow (Path of Building)". Nothing is allocated or socketed for you.
 
+`PoBCalc/` is a small helper that runs an installed Path of Building Community's calculations
+without its window: it loads Path of Building's LuaJIT (`lua51.dll`) and runs `driver.lua`
+(after Path of Building's `HeadlessWrapper.lua`, MIT) on the build, or on your character as the
+mod describes it from the game (`PoE1Access/PoBCalc.cs`), and the mod says the numbers.
+
 ## Game mechanics and the trials
 
 `PoE1Access/Mechanics.cs` holds the tutorial's Game mechanics lessons (the game's own systems,

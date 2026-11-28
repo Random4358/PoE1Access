@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Runs Path of Building's own calculations without its window, for the mod (see Program.cs). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>PoBCalc</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="driver.lua;_SimpleGraphic.def.lua;LICENSE-PathOfBuilding.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -252,6 +252,16 @@ to follow" and "Skill set to follow" choose one; by itself the tree is the first
 you have not taken yet. The build is kept until you load another or choose "Forget the build".
 Nothing is allocated or socketed for you.
 
+With Path of Building Community installed (from its GitHub page; the mod finds it by itself),
+two more entries say Path of Building's own numbers, after a few seconds: "Path of Building: the
+build's numbers" and "Path of Building: your character's numbers": the main skill's damage per
+second, life, energy shield, mana, resistances, armour, evasion, block, effective health, the
+biggest hit you survive of each kind, your attributes and any requirement you do not meet. For
+your character the mod describes your class, level, passives, worn gear and socketed gems to Path
+of Building; jewels, mastery choices, the pantheon and its configuration are not given, so the
+numbers are close rather than exact. After the build's numbers, yours are compared with them.
+Path of Building's own window is not used and never opens.
+
 CLASS DESCRIPTIONS
 
 On the class screen of character creation, each class's name is followed by how it plays: its

@@ -44,6 +44,12 @@ dotnet publish (Join-Path $root "Reader\Reader.csproj") -c Release -o (Join-Path
 if ($LASTEXITCODE -ne 0) { throw "Reader build failed" }
 Remove-Item (Join-Path $dist "app\reader\*.pdb") -ErrorAction SilentlyContinue
 
+# 2c. Path of Building helper: runs an installed Path of Building's calculations without its
+#     window (its LuaJIT and its Lua files stay where Path of Building is installed).
+dotnet publish (Join-Path $root "PoBCalc\PoBCalc.csproj") -c Release -o (Join-Path $dist "app\pobcalc") -nologo -v:q
+if ($LASTEXITCODE -ne 0) { throw "Path of Building helper build failed" }
+Remove-Item (Join-Path $dist "app\pobcalc\*.pdb") -ErrorAction SilentlyContinue
+
 # 3. Prism (screen reader output, MPL-2.0): next to the launcher and in the plugin folder,
 #    with its license and notice.
 $prism = Join-Path $root "third_party\prism"
