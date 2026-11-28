@@ -86,10 +86,43 @@ public partial class PoE1AccessCore
             _ => "",
         };
         if (rarityWord.Length > 0) title += ", " + rarityWord;
+        // What kind of item it is ("Iron Hat, helmet"), unless its name says so already.
+        string kind = Try(() => ItemKindWord(item, title), "");
+        if (kind.Length > 0) title += ", " + kind;
 
         int size = stack != null ? Try(() => stack.Size, 0) : 0;
         if (withStack && size > 1) title += ", " + size;
         return title;
+    }
+
+    // Gear, flasks and jewels by the game's item class, as a player would name them; currency,
+    // gems, maps and the rest are left to their names and their own lines.
+    private static readonly Dictionary<string, (string En, string Es)> ItemKinds = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Helmet"] = ("helmet", "casco"), ["Body Armour"] = ("body armour", "armadura"), ["Gloves"] = ("gloves", "guantes"),
+        ["Boots"] = ("boots", "botas"), ["Shield"] = ("shield", "escudo"), ["Quiver"] = ("quiver", "carcaj"),
+        ["Ring"] = ("ring", "anillo"), ["Amulet"] = ("amulet", "amuleto"), ["Belt"] = ("belt", "cinturón"),
+        ["Claw"] = ("claw", "garra"), ["Dagger"] = ("dagger", "daga"), ["Rune Dagger"] = ("rune dagger", "daga rúnica"),
+        ["Wand"] = ("wand", "varita"), ["Sceptre"] = ("sceptre", "cetro"), ["Staff"] = ("staff", "bastón"),
+        ["Warstaff"] = ("warstaff", "bastón de guerra"), ["Bow"] = ("bow", "arco"),
+        ["One Hand Sword"] = ("one-handed sword", "espada a una mano"), ["Thrusting One Hand Sword"] = ("thrusting one-handed sword", "espada estoque a una mano"),
+        ["One Hand Axe"] = ("one-handed axe", "hacha a una mano"), ["One Hand Mace"] = ("one-handed mace", "maza a una mano"),
+        ["Two Hand Sword"] = ("two-handed sword", "espada a dos manos"), ["Two Hand Axe"] = ("two-handed axe", "hacha a dos manos"),
+        ["Two Hand Mace"] = ("two-handed mace", "maza a dos manos"), ["FishingRod"] = ("fishing rod", "caña de pescar"),
+        ["LifeFlask"] = ("life flask", "frasco de vida"), ["ManaFlask"] = ("mana flask", "frasco de maná"),
+        ["HybridFlask"] = ("hybrid flask", "frasco híbrido"), ["UtilityFlask"] = ("utility flask", "frasco de utilidad"),
+        ["Jewel"] = ("jewel", "joya"), ["AbyssJewel"] = ("abyss jewel", "joya del abismo"),
+    };
+
+    /// <summary>"helmet", "two-handed sword", or "" when unknown or the name already says it.</summary>
+    private string ItemKindWord(Entity item, string name)
+    {
+        string cls = Try(() => GameController.Files.BaseItemTypes.Translate(item.Path)?.ClassName, "") ?? "";
+        if (!ItemKinds.TryGetValue(cls, out var k)) return "";
+        string word = T(k.En, k.Es);
+        // "Iron Ring, ring" or "Small Life Flask, life flask" say nothing new; "Rusted Sword" does
+        // not say it is one-handed, so it gets "one-handed sword".
+        return (name ?? "").IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0 ? "" : word;
     }
 
     // "Cannot use: 21 Int", or "" when the character meets every requirement.

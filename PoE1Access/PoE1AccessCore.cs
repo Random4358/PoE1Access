@@ -690,6 +690,9 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
         string body = unique.Length > 0 && !string.Equals(unique, baseName, StringComparison.OrdinalIgnoreCase)
             ? unique + ", " + baseName
             : MagicFullName(item, baseName);
+        // What kind of item it is ("Iron Hat, helmet"), unless its name says so (InventoryReader.cs).
+        string kind = Try(() => ItemKindWord(item, body), "");
+        if (kind.Length > 0) body += ", " + kind;
         return rarity switch
         {
             ItemRarity.Magic => T($"Magic {body}", $"Mágico, {body}"),
