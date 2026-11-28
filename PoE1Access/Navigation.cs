@@ -577,6 +577,9 @@ internal sealed partial class Navigator
             if (t != EntityType.Npc && !player) continue;
             if (player ? !PlayerSounds : !NpcSounds) continue;
             if (player && Try(() => e.Address, 0L) == me) continue;
+            // An NPC who has gone (the Dying Exile once dead) stays in the game's list but can no
+            // longer be targeted (seen 28 Nov 2026: still heard and listed).
+            if (!player && !NpcPresent(e)) continue;
             long id; Vector2 g;
             try { id = e.Id; g = e.GridPosNum; } catch { continue; }
             float dist = (g - p).Length();
@@ -1369,6 +1372,8 @@ internal sealed partial class Navigator
         try { valid = s.E.IsValid; } catch { valid = false; }
         // An exit out of the game's range is still there: keep going by where it was.
         if (!valid && s.Cat == Cat.Exits && s.Pos != Vector2.Zero) { s.E = null; return true; }
+        // An NPC who has gone, though still in the game's list (NpcPresent).
+        if (valid && s.Cat == Cat.Characters && !NpcPresent(s.E)) return false;
         return valid;
     }
 
@@ -1437,6 +1442,14 @@ internal sealed partial class Navigator
     }
 
     /// <summary>The game shows a quest icon for it on the minimap (shown, not hidden).</summary>
+    /// <summary>An NPC still there to talk to: targetable, or shown on the minimap.</summary>
+    private static bool NpcPresent(Entity e)
+    {
+        if (Try(() => e.IsTargetable, true)) return true;
+        var icon = Try(() => e.GetComponent<MinimapIcon>(), null);
+        return icon != null && icon.Address != 0 && Try(() => icon.IsVisible, false) && !Try(() => icon.IsHide, true);
+    }
+
     private static bool QuestMarked(Entity e)
     {
         var icon = Try(() => e.GetComponent<MinimapIcon>(), null);
@@ -1502,7 +1515,7 @@ internal sealed partial class Navigator
             case EntityType.Waypoint:
                 return Cat.Waypoints;
             case EntityType.Npc:
-                return Cat.Characters;
+                return NpcPresent(e) ? Cat.Characters : Cat.None;
             case EntityType.Player:
                 return Cat.Players;   // yourself is left out where the lists are made (IsMe)
             case EntityType.Monster:
