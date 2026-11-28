@@ -300,7 +300,8 @@ public partial class PoE1AccessCore
         var have = AllocatedPassives();
         var rowOf = new Dictionary<ushort, long>();
         foreach (var kv in _passiveIdOfRow) rowOf[kv.Value] = kv.Key;
-        var off = have.Where(h => !plan.Contains(h) && rowOf.ContainsKey(h)).Select(h => NodeName(rowOf[h])).ToList();
+        ushort start = ClassStartPassive();
+        var off = have.Where(h => h != start && !plan.Contains(h) && rowOf.ContainsKey(h)).Select(h => NodeName(rowOf[h])).ToList();
         Say(off.Count == 0 ? T($"Every passive you have is in {SpecName(FollowedSpec())}.", $"Todas tus pasivas están en {SpecName(FollowedSpec())}.")
             : T($"{off.Count} passives you have are not in {SpecName(FollowedSpec())}: {string.Join(", ", off)}", $"{off.Count} pasivas tuyas no están en {SpecName(FollowedSpec())}: {string.Join(", ", off)}"), true);
     }

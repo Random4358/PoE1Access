@@ -78,8 +78,12 @@ public partial class PoE1AccessCore
         string list = FinderListName(_finderList);
         if (nodes.Count == 0 && _finderList == 5)
         {
-            // The Path of Building build followed (BuildFollow.cs).
+            // The Path of Building build followed (BuildFollow.cs). An empty list is "all taken"
+            // only when nothing of the build is left to take.
+            var have = AllocatedPassives();
+            bool left = _build != null && BuildNodes().Any(n => !have.Contains(n));
             Say(_build == null ? T("Your build: none loaded. Load one in the mod menu, under Build to follow.", "Tu build: ninguna cargada. Carga una en el menú del mod, en Build a seguir.")
+                : left ? T($"Your build: no way found from your passives to those of {SpecName(FollowedSpec())}", $"Tu build: no hay camino desde tus pasivas hasta las de {SpecName(FollowedSpec())}")
                 : T($"Your build: every passive of {SpecName(FollowedSpec())} is taken", $"Tu build: todas las pasivas de {SpecName(FollowedSpec())} están tomadas"), true);
             return;
         }
@@ -183,8 +187,26 @@ public partial class PoE1AccessCore
         return d.Length > 0 ? T($"From here{d}", $"Desde aquí{d}") : "";
     }
 
-    private HashSet<ushort> AllocatedPassives() =>
-        new HashSet<ushort>(Try(() => GameController.IngameState.ServerData.PassiveSkillIds.Select(i => (ushort)i).ToList(), new List<ushort>()));
+    /// <summary>Your passives, with your class's starting node: the game does not list it, so at
+    /// level 1 with nothing taken every list was empty ("none on this tree", seen 28 Nov 2026).</summary>
+    private HashSet<ushort> AllocatedPassives()
+    {
+        var set = new HashSet<ushort>(Try(() => GameController.IngameState.ServerData.PassiveSkillIds.Select(i => (ushort)i).ToList(), new List<ushort>()));
+        ushort start = ClassStartPassive();
+        if (start != 0) set.Add(start);
+        return set;
+    }
+
+    // Each class's starting node on the passive tree, by class number (0 Scion ... 6 Shadow, as in
+    // ClassScreen.cs); the same in every tree version (Path of Building's tree data, 3.30).
+    private static readonly ushort[] ClassStartPassives = { 58833, 47175, 50459, 54447, 50986, 61525, 44683 };
+
+    private ushort ClassStartPassive()
+    {
+        string path = Try(() => GameController.Player?.Path, "") ?? "";
+        int c = Array.FindIndex(Classes, x => path.StartsWith(x.Id, StringComparison.OrdinalIgnoreCase));
+        return c >= 0 ? ClassStartPassives[c] : (ushort)0;
+    }
 
     private bool CanAllocate(long row) =>
         _treeElements != null && _treeElements.TryGetValue(row, out Element el) && Try(() => el.AsObject<TreePassiveElement>().CanAllocate, false);

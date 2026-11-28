@@ -202,7 +202,7 @@ public partial class PoE1AccessCore
         if (links == null || !links.TryGetValue(row, out var mine)) return ("", "");
         LearnPassiveRows();
         var elements = TreeElements(hover);
-        var allocated = new HashSet<ushort>(Try(() => GameController.IngameState.ServerData.PassiveSkillIds.Select(i => (ushort)i).ToList(), new List<ushort>()));
+        var allocated = AllocatedPassives();   // with your class's starting node (PassiveFinder.cs)
 
         Vector2 here = Centre(hover);
         var parts = new List<(int Dir, string Text)>();
