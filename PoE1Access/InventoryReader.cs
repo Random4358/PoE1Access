@@ -225,7 +225,12 @@ public partial class PoE1AccessCore
         if (item == null || item.Address == 0) return null;
         string path = Try(() => item.Path, "") ?? "";
         string cls = Try(() => GameController.Files.BaseItemTypes.Translate(path)?.ClassName, "") ?? "";
-        return GameSounds.DropEvent(cls, path);
+        string ev = GameSounds.DropEvent(cls, path);
+        // Each item's sound, once (it is worked out once per item), to find what an unexpected
+        // drop sound belongs to (28 Nov 2026: a ring's sound on killing enemies, no ring listed).
+        string name = Try(() => GetComp<BaseComp>(item)?.Name, "") ?? "";
+        PluginLog.Write($"Loot sound: {name} | class {cls} | {path} -> {ev.Replace("event:/Sound Effects/ItemSounds/", "")}");
+        return ev;
     }
 
     private Synth.Loot? LootKindOf(Entity ground)
