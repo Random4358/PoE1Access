@@ -47,7 +47,7 @@ public partial class PoE1AccessCore
     private List<Element> _legends = new List<Element>();
     private readonly HashSet<string> _unnamedPictures = new HashSet<string>();
     private long _legendRoot;
-    private long _nextLegendSearchMs, _nextLegendPollMs;
+    private long _nextLegendSearchMs, _nextLegendPollMs, _legendFullSearchMs;
     private string _legendSig = "", _actionMenuSig = "";
     private List<string> _legendNow = new List<string>();
     private bool _bindingMode, _legendWasBusy, _bindingHowSaid, _bindingListOpen;
@@ -181,8 +181,13 @@ public partial class PoE1AccessCore
         {
             if (now >= _nextLegendSearchMs)
             {
+                // The search walks much of the interface (120 to 280 ms in play, seen 28 Nov
+                // 2026) and the mod's sounds wait for it, so while the legends found still look
+                // like legends it is done only once a minute (every 5 s while none is found).
+                bool stillThere = _legends.Count > 0 && now - _legendFullSearchMs < 60000 &&
+                                  _legends.All(l => Try(() => l.ChildCount, 0L) >= 20);
+                if (!stillThere) { _legends = FindLegends(root); _legendFullSearchMs = now; }
                 _nextLegendSearchMs = now + 5000;
-                _legends = FindLegends(root);
             }
             if (_legends.Count == 0) return result;
         }

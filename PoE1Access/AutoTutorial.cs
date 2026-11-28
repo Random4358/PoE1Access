@@ -57,6 +57,19 @@ public partial class PoE1AccessCore
     /// given; null when it is to be asked.</summary>
     private bool? TutorialAnswer()
     {
+        // Asked many times a tick: worked out at most twice a second.
+        long nowMs = _clock.ElapsedMilliseconds;
+        if (nowMs - _tutAnswerMs < 500) return _tutAnswer;
+        _tutAnswerMs = nowMs;
+        _tutAnswer = TutorialAnswerNow();
+        return _tutAnswer;
+    }
+
+    private long _tutAnswerMs = -1000;
+    private bool? _tutAnswer;
+
+    private bool? TutorialAnswerNow()
+    {
         string who = TutorialCharacter();
         if (who.Length > 0 && SeenHas("answer:yes:" + who)) return true;
         if (who.Length > 0 && SeenHas("answer:no:" + who)) return false;
@@ -68,6 +81,7 @@ public partial class PoE1AccessCore
 
     private void SaveTutorialAnswer(bool yes)
     {
+        _tutAnswerMs = -1000;
         string who = TutorialCharacter();
         // The first answer ever also stands for the characters made before this question.
         if (!SeenHas("answer:yes") && !SeenHas("answer:no")) SeenAdd(yes ? "answer:yes" : "answer:no");
@@ -109,6 +123,7 @@ public partial class PoE1AccessCore
     {
         bool never = SeenHas("ask:never");
         if (never) SeenRemove("ask:never"); else SeenAdd("ask:never");
+        _tutAnswerMs = -1000;
         Say(never ? T("New characters will be asked about tutorials.", "Se preguntará por los tutoriales a los personajes nuevos.")
                   : T("New characters will not be asked about tutorials.", "No se preguntará por los tutoriales a los personajes nuevos."), true);
     }
@@ -224,6 +239,7 @@ public partial class PoE1AccessCore
                 _askPending = false;
                 SaveTutorialAnswer(false);
                 SeenAdd("ask:never");
+                _tutAnswerMs = -1000;
                 PluginLog.Write("Tutorials: no, and do not ask again");
                 Say(T("No tutorials, and new characters will not be asked. Both can be changed in the mod menu, under Tutorial.", "Sin tutoriales, y no se preguntará a los personajes nuevos. Ambas cosas se pueden cambiar en el menú del mod, en Tutorial."), true);
                 return true;

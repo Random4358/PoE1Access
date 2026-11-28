@@ -645,7 +645,9 @@ internal static class Synth
 
     public static float[] QuestRing(float pan, float pitch)
     {
-        const double seconds = 0.14;
+        // Long enough for the ring to die away by itself, with a gentle fade at the end (it was
+        // 0.14 s, which cut the ring off sharply while it was still a fifth as loud; heard 28 Nov 2026).
+        const double seconds = 0.45;
         var b = Buffer(seconds);
         var g = Gains(pan);
         int n = b.Length / 2;
@@ -654,7 +656,7 @@ internal static class Synth
             double t = (double)i / SR, v = 0;
             for (int k = 0; k < RingRatios.Length; k++)
                 v += RingAmplitudes[k] * Math.Exp(-t / RingDecays[k]) * Math.Sin(2 * Math.PI * 520 * pitch * RingRatios[k] * t);
-            double env = Math.Min(1, t / 0.002) * Math.Min(1, (seconds - t) / 0.01);
+            double env = Math.Min(1, t / 0.002) * Math.Min(1, (seconds - t) / 0.15);
             Put(b, i, (float)(v * env * 0.35), g);
         }
         return b;
