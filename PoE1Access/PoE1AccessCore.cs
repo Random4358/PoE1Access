@@ -1089,6 +1089,9 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
                        Try(() => Game.IsLoginState, false);
         if (preGame)
         {
+            // The options window opened from the login screen lies in a tree of its own (PreGameOptions.cs).
+            Element overlay = PreGameOverlayRoot();
+            if (overlay != null) return overlay;
             Element pre = PreGameRoot();
             if (pre != null) return pre;
         }

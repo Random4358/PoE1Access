@@ -74,9 +74,13 @@ public partial class PoE1AccessCore
             lines.Add((p, t));
         }
 
-        // The biggest group of new text under one place (the first four steps of its path).
+        // The biggest group of new text under one place (the first four steps of its path). A
+        // group that holds the selection is the window around it, not a tooltip (seen 28 Nov 2026
+        // in the options: switching tabs showed the new page's labels and the tab names, read as
+        // a tooltip that cut off the setting just reached).
         string Group(string p) => string.Join("/", p.Split('/').Take(4));
-        var group = lines.GroupBy(l => Group(l.Path)).OrderByDescending(g => g.Count()).FirstOrDefault();
+        var group = lines.Where(l => anchorPath == null || !Under(anchorPath, Group(l.Path)))
+                         .GroupBy(l => Group(l.Path)).OrderByDescending(g => g.Count()).FirstOrDefault();
         var texts = group == null ? new List<string>()
             : group.OrderBy(l => l.Path, PathOrder.Instance).Select(l => l.Text).Distinct().ToList();
         long boxAddr = 0;
@@ -85,7 +89,7 @@ public partial class PoE1AccessCore
 
         // Nothing new: the tooltip the game keeps on screen, when its text changed.
         if (texts.Count == 0 && since >= 300 && _tipBoxAddr != 0 && elements.TryGetValue(_tipBoxAddr, out var box) &&
-            (anchorPath == null || !Under(elements[_tipBoxAddr].Path, anchorPath)))
+            (anchorPath == null || (!Under(elements[_tipBoxAddr].Path, anchorPath) && !Under(anchorPath, elements[_tipBoxAddr].Path))))
         {
             var again = new List<string>();
             CollectText(box.E, 10, again);
