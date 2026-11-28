@@ -762,7 +762,10 @@ internal sealed partial class Navigator
             if (Try(() => e.Type, EntityType.Error) != EntityType.WorldItem) continue;
             long id;
             Vector2 g;
-            try { id = e.Address; g = e.GridPosNum; } catch { continue; }
+            // An item is known by its place in memory and its entity number together: the game
+            // reuses a place once an item is gone, and a gold pile there played the ring sound
+            // remembered for an earlier ring (28 Nov 2026).
+            try { id = e.Address ^ ((long)e.Id << 48); g = e.GridPosNum; } catch { continue; }
             float dist = (g - p).Length();
             if (dist > LootCells) continue;
             if (!LootShown(e)) continue;   // hidden by the game's loot filter
@@ -778,7 +781,7 @@ internal sealed partial class Navigator
         if (now - _lootCleanMs > 10000)
         {
             _lootCleanMs = now;
-            var live = new HashSet<long>(Entities().Select(x => Try(() => x.Address, 0L)));
+            var live = new HashSet<long>(Entities().Select(x => Try(() => x.Address ^ ((long)x.Id << 48), 0L)));
             foreach (long k in _lootKinds.Keys.Where(k => !live.Contains(k)).ToList()) { _lootKinds.Remove(k); _lootNextMs.Remove(k); _lootEvents.Remove(k); }
         }
 
@@ -882,7 +885,8 @@ internal sealed partial class Navigator
 
             long id;
             Vector2 g;
-            try { id = e.Address; g = e.GridPosNum; } catch { continue; }
+            // By place in memory and entity number together, as the loot sounds: a place is reused.
+            try { id = e.Address ^ ((long)e.Id << 48); g = e.GridPosNum; } catch { continue; }
             float dist = (g - p).Length();
 
             if (!_nearby.TryGetValue(id, out var st)) { st = new NearbyState(); _nearby[id] = st; }

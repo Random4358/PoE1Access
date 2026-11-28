@@ -42,6 +42,10 @@ internal sealed class GameSounds : IDisposable
     private delegate int SetFloatFn(IntPtr instance, float value);
     private delegate int InstanceFn(IntPtr instance);
     private delegate int SystemFn(IntPtr system);
+    private delegate int SetPropertyFn(IntPtr instance, int index, float value);
+    private delegate int DescCountFn(IntPtr description, out int count);
+    private delegate int DescFn(IntPtr description);
+    private SetPropertyFn _setProperty; private DescCountFn _instanceCount; private DescFn _releaseAll;
 
     private CreateFn _create; private InitFn _init; private LoadBankFn _loadBank; private GetEventFn _getEvent;
     private CreateInstanceFn _createInstance; private Set3DFn _set3D; private SetFloatFn _setVolume, _setPitch;
@@ -90,6 +94,10 @@ internal sealed class GameSounds : IDisposable
             _setPitch = F<SetFloatFn>("FMOD_Studio_EventInstance_SetPitch");
             _start = F<InstanceFn>("FMOD_Studio_EventInstance_Start");
             _release = F<InstanceFn>("FMOD_Studio_EventInstance_Release");
+            // For replaying the game's drop sounds as often as the mod needs (see Play).
+            try { _setProperty = F<SetPropertyFn>("FMOD_Studio_EventInstance_SetProperty"); } catch { }
+            try { _instanceCount = F<DescCountFn>("FMOD_Studio_EventDescription_GetInstanceCount"); } catch { }
+            try { _releaseAll = F<DescFn>("FMOD_Studio_EventDescription_ReleaseAllInstances"); } catch { }
             _update = F<SystemFn>("FMOD_Studio_System_Update");
             _releaseSystem = F<SystemFn>("FMOD_Studio_System_Release");
             _getCore = F<GetCoreFn>("FMOD_Studio_System_GetCoreSystem");
@@ -139,7 +147,13 @@ internal sealed class GameSounds : IDisposable
                 _events[eventPath] = description;
             }
             if (description == IntPtr.Zero) return false;
+            // The game's events keep a sound from playing again too soon (a cooldown) or from
+            // playing more than once or twice at a time, which it needs, not the mod: a gold
+            // pile's sound played once and never again (28 Nov 2026). Copies still playing make
+            // way, and the new one has no cooldown.
+            if (_instanceCount != null && _releaseAll != null && _instanceCount(description, out int alive) == 0 && alive >= 2) _releaseAll(description);
             if (_createInstance(description, out IntPtr instance) != 0) return false;
+            _setProperty?.Invoke(instance, 5, 0f);   // FMOD_STUDIO_EVENT_PROPERTY_COOLDOWN: none
             // The listener stands at the origin facing +Z; the sound two steps ahead, to the side.
             var at = new Attributes3D
             {
