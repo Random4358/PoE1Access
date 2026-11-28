@@ -101,6 +101,14 @@ without its window: it loads Path of Building's LuaJIT (`lua51.dll`) and runs `d
 (after Path of Building's `HeadlessWrapper.lua`, MIT) on the build, or on your character as the
 mod describes it from the game (`PoE1Access/PoBCalc.cs`), and the mod says the numbers.
 
+## Crafting your own build
+
+`PoE1Access/BuildCraft.cs` asks Path of Building what one change would do, by calculating your
+character and the changed versions in one run (`PoBCalc/driver.lua`, mode `compare`): triple
+tap L3 on an item (wearing it) or a passive node (taking or refunding it); L3 and right on a
+node plans it without spending a point; the "Build crafting" menu gives the plan's numbers,
+follows or copies it as a build code, and tries support gems on the calculated skill.
+
 ## Game mechanics and the trials
 
 `PoE1Access/Mechanics.cs` holds the tutorial's Game mechanics lessons (the game's own systems,

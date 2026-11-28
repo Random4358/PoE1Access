@@ -21,7 +21,7 @@ namespace PoE1Access;
 // along nodes you do not have, as for "N points away".
 public partial class PoE1AccessCore
 {
-    private static readonly string[] FinderLists = { "Position", "Keystones", "Notables", "Jewel sockets", "Next to your nodes", "Your build", "Taken in the build", "Taken outside the build" };
+    private static readonly string[] FinderLists = { "Position", "Keystones", "Notables", "Jewel sockets", "Next to your nodes", "Your build", "Taken in the build", "Taken outside the build", "Your plan" };
     private int _finderList, _finderIndex = -1;
     private long _finderTarget;
     private Element _passiveHover;
@@ -47,6 +47,7 @@ public partial class PoE1AccessCore
         5 => T("Your build", "Tu build"),
         6 => T("Taken in the build", "Tomadas de la build"),
         7 => T("Taken outside the build", "Tomadas fuera de la build"),
+        8 => T("Your plan", "Tu plan"),
         _ => FinderLists[i],
     };
 
@@ -78,7 +79,12 @@ public partial class PoE1AccessCore
     {
         var nodes = FinderNodes(_finderList);
         string list = FinderListName(_finderList);
-        if (nodes.Count == 0 && _finderList >= 6 && _build == null)
+        if (nodes.Count == 0 && _finderList == 8)
+        {
+            Say(T("Your plan: nothing planned to take. Hold L3 and push the right stick right on a node to plan it.", "Tu plan: nada planeado por tomar. Mantén L3 y empuja el stick derecho a la derecha sobre un nodo para planearlo."), true);
+            return;
+        }
+        if (nodes.Count == 0 && _finderList >= 6 && _finderList <= 7 && _build == null)
         {
             Say(T($"{list}: no build loaded. Load one in the mod menu, under Build to follow.", $"{list}: no hay build cargada. Carga una en el menú del mod, en Build a seguir."), true);
             return;
@@ -243,6 +249,7 @@ public partial class PoE1AccessCore
                 4 => cost == 1,
                 5 => cost > 0 && _passiveIdOfRow.TryGetValue(row, out ushort bid) && buildNodes.Contains(bid),
                 6 => cost == 0 && _passiveIdOfRow.TryGetValue(row, out ushort tid) && tid != classStart && buildNodes.Contains(tid),
+                8 => cost > 0 && _passiveIdOfRow.TryGetValue(row, out ushort plid) && Plan().Contains(plid),
                 7 => _build != null && cost == 0 && _passiveIdOfRow.TryGetValue(row, out ushort oid) && oid != classStart && BuildStepOf(oid) < 0,
                 _ => false,
             };

@@ -265,22 +265,55 @@ public partial class PoE1AccessCore
         ["Ring 2"] = "Ring 2", ["Swap main hand"] = "Weapon 1 Swap", ["Swap off hand"] = "Weapon 2 Swap",
     };
 
+    /// <summary>A gem as Path of Building names it ("Elemental Focus", without " Support").</summary>
+    private sealed class PoBGem
+    {
+        public string Name = "";
+        public int Level = 1, Quality;
+        public bool Support;
+        public PoBGem Copy() => new PoBGem { Name = Name, Level = Level, Quality = Quality, Support = Support };
+    }
+
+    /// <summary>Your character as Path of Building needs it, to change one thing and turn into a
+    /// file (BuildCraft.cs): class, level, passives, items by Path of Building's slot, skill groups.</summary>
+    private sealed class CharModel
+    {
+        public int Level, ClassId, MainGroup = 1, Penalty, EnemyLevel;
+        public HashSet<ushort> Nodes = new HashSet<ushort>();
+        public Dictionary<string, string> Items = new Dictionary<string, string>();
+        public List<(string Slot, List<PoBGem> Gems)> Groups = new List<(string, List<PoBGem>)>();
+
+        public CharModel Copy() => new CharModel
+        {
+            Level = Level, ClassId = ClassId, MainGroup = MainGroup, Penalty = Penalty, EnemyLevel = EnemyLevel,
+            Nodes = new HashSet<ushort>(Nodes), Items = new Dictionary<string, string>(Items),
+            Groups = Groups.Select(g => (g.Slot, g.Gems.Select(x => x.Copy()).ToList())).ToList(),
+        };
+    }
+
+    /// <summary>The skill group Path of Building calculates, chosen in the Skill plan menu (1 on);
+    /// 0 for the biggest group with a skill gem in it.</summary>
+    private int _pobMainChoice;
+
     private string CharacterXml()
+    {
+        var m = CharacterModel();
+        return m == null ? null : ModelXml(m);
+    }
+
+    private CharModel CharacterModel()
     {
         ServerData server = GetServerData();
         var player = GameController.Player;
         if (server == null || player == null) return null;
-        int level = Try(() => GetComp<ExileCore.PoEMemory.Components.Player>(player)?.Level ?? 0, 0);
-        if (level <= 0) return null;
+        var m = new CharModel();
+        m.Level = Try(() => GetComp<ExileCore.PoEMemory.Components.Player>(player)?.Level ?? 0, 0);
+        if (m.Level <= 0) return null;
         string path = Try(() => player.Path, "") ?? "";
-        int classId = Array.FindIndex(Classes, c => path.StartsWith(c.Id, StringComparison.OrdinalIgnoreCase));
-        if (classId < 0) classId = 0;
-        string nodes = string.Join(",", AllocatedPassives().Select(i => i.ToString(CultureInfo.InvariantCulture)));
+        m.ClassId = Math.Max(0, Array.FindIndex(Classes, c => path.StartsWith(c.Id, StringComparison.OrdinalIgnoreCase)));
+        m.Nodes = AllocatedPassives();
 
-        var items = new StringBuilder();
-        var slots = new StringBuilder();
-        var skills = new StringBuilder();
-        int itemId = 0, group = 0, mainGroup = 1, mainSize = 0;
+        int mainSize = 0;
         foreach (var (slot, label) in EquipmentSlots)
             foreach (var s in Slots(server, slot))
             {
@@ -289,42 +322,15 @@ public partial class PoE1AccessCore
                 if (pobSlot == null || item == null) continue;
                 string text = Try(() => ItemPoBText(item), null);
                 if (text == null) continue;
-                itemId++;
-                items.Append("<Item id=\"").Append(itemId).Append("\">").Append(SecurityElement.Escape(text)).Append("</Item>\n");
-                slots.Append("<Slot name=\"").Append(pobSlot).Append("\" itemId=\"").Append(itemId).Append("\"/>\n");
-                // Its gems, a skill group per linked group of sockets.
-                var sockets = GetComp<SocketsComp>(item);
-                var groups = Try(() => sockets?.SocketGroup, null);
-                if (groups == null) continue;
-                var gemAt = new Dictionary<int, (string Name, int Level, int Quality, bool Support)>();
-                var socketed = Try(() => sockets.SocketedGems, null);
-                if (socketed != null)
-                    foreach (var g in socketed)
-                    {
-                        Entity gem = Try(() => g.GemEntity, null);
-                        string name = gem == null ? "" : CleanText(Try(() => GetComp<BaseComp>(gem)?.Name, "") ?? "");
-                        if (name.Length == 0) continue;
-                        bool support = name.EndsWith(" Support", StringComparison.OrdinalIgnoreCase);
-                        if (support) name = name.Substring(0, name.Length - 8);
-                        gemAt[Try(() => g.SocketIndex, -1)] = (name, Try(() => GetComp<GemComp>(gem)?.Level ?? 1, 1), Try(() => GetComp<QualityComp>(gem)?.ItemQuality ?? 0, 0), support);
-                    }
-                int index = 0;
-                foreach (string linked in groups)
+                m.Items[pobSlot] = text;
+                foreach (var gems in Try(() => LinkedGems(item), new List<List<PoBGem>>()))
                 {
-                    if (string.IsNullOrEmpty(linked)) continue;
-                    var gems = new List<(string Name, int Level, int Quality, bool Support)>();
-                    for (int k = 0; k < linked.Length; k++, index++) if (gemAt.TryGetValue(index, out var gm)) gems.Add(gm);
-                    if (gems.Count == 0) continue;
-                    group++;
+                    m.Groups.Add((pobSlot, gems));
                     // The main skill: the biggest group with a skill gem in it.
-                    if (gems.Any(x => !x.Support) && gems.Count > mainSize) { mainSize = gems.Count; mainGroup = group; }
-                    skills.Append("<Skill slot=\"").Append(pobSlot).Append("\" enabled=\"true\" mainActiveSkill=\"1\">");
-                    foreach (var gm in gems.OrderBy(x => x.Support))
-                        skills.Append("<Gem nameSpec=\"").Append(SecurityElement.Escape(gm.Name)).Append("\" level=\"").Append(gm.Level)
-                              .Append("\" quality=\"").Append(gm.Quality).Append("\" enabled=\"true\"/>");
-                    skills.Append("</Skill>\n");
+                    if (gems.Any(x => !x.Support) && gems.Count > mainSize) { mainSize = gems.Count; m.MainGroup = m.Groups.Count; }
                 }
             }
+        if (_pobMainChoice > 0 && _pobMainChoice <= m.Groups.Count) m.MainGroup = _pobMainChoice;
 
         // Where you are in the campaign, which Path of Building cannot know: it takes the
         // resistance penalty of the end of the campaign (-60) and level 84 enemies by default,
@@ -333,17 +339,77 @@ public partial class PoE1AccessCore
         var area = Try(() => GameController.Area.CurrentArea, null);
         int act = Try(() => area?.Area?.Act ?? 0, 0);
         string areaId = Try(() => area?.Area?.Id, "") ?? "";
-        int areaLevel = Try(() => area?.RealLevel ?? 0, 0);
+        m.EnemyLevel = Try(() => area?.RealLevel ?? 0, 0);
         bool endgame = act >= 11 || areaId.StartsWith("Map", StringComparison.OrdinalIgnoreCase);
-        int penalty = endgame ? -60 : act >= 6 ? -30 : 0;
+        m.Penalty = endgame ? -60 : act >= 6 ? -30 : 0;
+        return m;
+    }
+
+    /// <summary>An item's gems, one list per group of linked sockets, skill gems first.</summary>
+    private List<List<PoBGem>> LinkedGems(Entity item)
+    {
+        var result = new List<List<PoBGem>>();
+        var sockets = GetComp<SocketsComp>(item);
+        var groups = Try(() => sockets?.SocketGroup, null);
+        if (groups == null) return result;
+        var gemAt = new Dictionary<int, PoBGem>();
+        var socketed = Try(() => sockets.SocketedGems, null);
+        if (socketed != null)
+            foreach (var g in socketed)
+            {
+                Entity gem = Try(() => g.GemEntity, null);
+                string name = gem == null ? "" : CleanText(Try(() => GetComp<BaseComp>(gem)?.Name, "") ?? "");
+                if (name.Length == 0) continue;
+                bool support = name.EndsWith(" Support", StringComparison.OrdinalIgnoreCase);
+                if (support) name = name.Substring(0, name.Length - 8);
+                gemAt[Try(() => g.SocketIndex, -1)] = new PoBGem
+                {
+                    Name = name, Support = support,
+                    Level = Try(() => GetComp<GemComp>(gem)?.Level ?? 1, 1),
+                    Quality = Try(() => GetComp<QualityComp>(gem)?.ItemQuality ?? 0, 0),
+                };
+            }
+        int index = 0;
+        foreach (string linked in groups)
+        {
+            if (string.IsNullOrEmpty(linked)) continue;
+            var gems = new List<PoBGem>();
+            for (int k = 0; k < linked.Length; k++, index++) if (gemAt.TryGetValue(index, out var gm)) gems.Add(gm);
+            if (gems.Count > 0) result.Add(gems.OrderBy(x => x.Support).ToList());
+        }
+        return result;
+    }
+
+    /// <summary>A character model as a Path of Building file.</summary>
+    private string ModelXml(CharModel m)
+    {
         var config = new StringBuilder("<Config activeConfigSet=\"1\"><ConfigSet id=\"1\" title=\"Default\">");
-        config.Append("<Input name=\"resistancePenalty\" number=\"").Append(penalty).Append("\"/>");
-        if (areaLevel > 0) config.Append("<Input name=\"enemyLevel\" number=\"").Append(areaLevel).Append("\"/>");
+        config.Append("<Input name=\"resistancePenalty\" number=\"").Append(m.Penalty).Append("\"/>");
+        if (m.EnemyLevel > 0) config.Append("<Input name=\"enemyLevel\" number=\"").Append(m.EnemyLevel).Append("\"/>");
         config.Append("</ConfigSet></Config>\n");
 
+        var items = new StringBuilder();
+        var slots = new StringBuilder();
+        int itemId = 0;
+        foreach (var kv in m.Items)
+        {
+            itemId++;
+            items.Append("<Item id=\"").Append(itemId).Append("\">").Append(SecurityElement.Escape(kv.Value)).Append("</Item>\n");
+            slots.Append("<Slot name=\"").Append(kv.Key).Append("\" itemId=\"").Append(itemId).Append("\"/>\n");
+        }
+        var skills = new StringBuilder();
+        foreach (var (slot, gems) in m.Groups)
+        {
+            skills.Append("<Skill slot=\"").Append(slot).Append("\" enabled=\"true\" mainActiveSkill=\"1\">");
+            foreach (var gm in gems)
+                skills.Append("<Gem nameSpec=\"").Append(SecurityElement.Escape(gm.Name)).Append("\" level=\"").Append(gm.Level)
+                      .Append("\" quality=\"").Append(gm.Quality).Append("\" enabled=\"true\"/>");
+            skills.Append("</Skill>\n");
+        }
+        string nodes = string.Join(",", m.Nodes.Select(i => i.ToString(CultureInfo.InvariantCulture)));
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PathOfBuilding>\n" + config +
-               $"<Build level=\"{level}\" className=\"{Classes[classId].English}\" ascendClassName=\"None\" mainSocketGroup=\"{mainGroup}\" targetVersion=\"3_0\" bandit=\"None\"/>\n" +
-               $"<Tree activeSpec=\"1\"><Spec treeVersion=\"LATEST\" classId=\"{classId}\" ascendClassId=\"0\" nodes=\"{nodes}\"/></Tree>\n" +
+               $"<Build level=\"{m.Level}\" className=\"{Classes[m.ClassId].English}\" ascendClassName=\"None\" mainSocketGroup=\"{m.MainGroup}\" targetVersion=\"3_0\" bandit=\"None\"/>\n" +
+               $"<Tree activeSpec=\"1\"><Spec treeVersion=\"LATEST\" classId=\"{m.ClassId}\" ascendClassId=\"0\" nodes=\"{nodes}\"/></Tree>\n" +
                $"<Skills activeSkillSet=\"1\"><SkillSet id=\"1\">\n{skills}</SkillSet></Skills>\n" +
                $"<Items activeItemSet=\"1\">\n{items}<ItemSet id=\"1\">\n{slots}</ItemSet></Items>\n</PathOfBuilding>\n";
     }

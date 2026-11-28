@@ -273,6 +273,22 @@ of Building; jewels, mastery choices, the pantheon and its configuration are not
 numbers are close rather than exact. After the build's numbers, yours are compared with them.
 Path of Building's own window is not used and never opens.
 
+CRAFTING YOUR OWN BUILD (needs Path of Building Community installed)
+
+- Triple tap L3 on any item, in your bag, the stash or a merchant's stock: Path of Building says
+  what wearing it would change ("Wearing Doom Shell: damage per second +12%, life +30, fire
+  resistance minus 20"); a ring is tried in each ring slot. Flasks and jewels are not compared.
+- Triple tap L3 on a passive node: what taking it, with the points on the way, would change, or
+  for a node you have, what refunding it would.
+- On the passive tree, hold L3 and push the right stick right on a node to plan it (with the
+  nodes on the way) or take it out of your plan. Nothing is allocated. Planned nodes say
+  "planned", and the D-pad's lists have "Your plan".
+- The mod menu's "Build crafting (Path of Building)": your plan's numbers against yours, follow
+  your plan as your build, copy your plan or your character as a build code (to paste in Path of
+  Building or send to a friend), clear your plan, choose which of your skills Path of Building
+  calculates, and try any support gem on that skill, added or instead of each support it has.
+Each answer takes a few seconds. Nothing is allocated, equipped or socketed for you.
+
 CLASS DESCRIPTIONS
 
 On the class screen of character creation, each class's name is followed by how it plays: its

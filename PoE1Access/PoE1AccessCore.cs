@@ -606,8 +606,20 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
             }
         }
 
-        // In menus the keyboard's Delete and End act as hold and long hold (Poe2Access layout).
-        if (uiBusy && cmd == ControllerInput.Command.Guide) cmd = ControllerInput.Command.Hold;
+        // In menus a triple tap asks Path of Building what an item or passive would change
+        // (BuildCraft.cs); with nothing to ask about it is a hold, as the keyboard's Delete.
+        if (uiBusy && cmd == ControllerInput.Command.Guide)
+        {
+            if (Try(CraftWhatIf, false)) return;
+            cmd = ControllerInput.Command.Hold;
+        }
+        // On the passive tree, L3 and right plans the node under the cursor (BuildCraft.cs).
+        if (uiBusy && cmd == ControllerInput.Command.ScanRight && _passiveHover != null && _passiveHoverRow != 0 &&
+            _craftRowMs >= _craftItemMs && Try(() => UiText.Visible(Mem, _passiveHover), false))
+        {
+            Guard("plan", TogglePlanned);
+            return;
+        }
         if (uiBusy && cmd == ControllerInput.Command.ScanRight && _tipLines.Count > 0) cmd = ControllerInput.Command.LongHold;
 
         bool inventoryOpen = _openPanels != null && _openPanels.Any(t => IsGameWord(t, InventoryTitle));
@@ -2404,6 +2416,10 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
         catch (Exception ex) { Report("passive links", ex); }
         // Its place in the followed build (BuildTree.cs): "in the build, from Act 2".
         string buildNote = Try(() => BuildNodeNote(skill.Address, (ushort)skill.PassiveId, allocated), "");
+        // In your own plan (BuildCraft.cs), and the node the triple tap asks about.
+        string planNote = Try(() => PlanNote((ushort)skill.PassiveId, allocated), "");
+        if (planNote.Length > 0) buildNote = buildNote.Length > 0 ? planNote + ", " + buildNote : planNote;
+        NoteCraftNode(skill.Address);
         var parts = new List<string> { name + ", " + kind + (status.Length > 0 ? ", " + status : "") +
                                         (!allocated && !string.IsNullOrEmpty(distance) && status == notLinkedText ? ", " + distance : "") +
                                         (buildNote.Length > 0 ? ", " + buildNote : "") };

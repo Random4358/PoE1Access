@@ -458,6 +458,7 @@ public partial class PoE1AccessCore
 
         var (place, label, col, row) = Locate(item);
         _lastFocusWasEquipment = place == ItemPlace.Equipped;
+        NoteCraftItem(item);   // for the triple tap's comparison (BuildCraft.cs)
         // A vendor's item: its price is looked for on screen (Currency.cs).
         PriceAnchor(item, place != ItemPlace.None);
         string title = ItemTitle(item);

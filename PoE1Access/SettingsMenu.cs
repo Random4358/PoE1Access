@@ -51,6 +51,7 @@ public partial class PoE1AccessCore
         {
             TutorialMenu(),
             BuildMenu_(),
+            CraftMenu(),
             Sub(T("Sound volumes", "Volúmenes de sonido"),
                 Vol(T("Master volume", "Volumen general"), Settings.MasterVolume, _ => SampleSound("loot")),
                 Vol(T("Enemy, NPC and combat sounds", "Sonidos de enemigos, PNJ y combate"), Settings.EnemyVolume, _ => SampleSound("enemy")),
