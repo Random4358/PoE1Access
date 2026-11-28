@@ -110,7 +110,8 @@ public partial class PoE1AccessCore
             Sub(T("Reading", "Lectura"),
                 Sw(T("Read the controller selection", "Leer la selección del mando"), Settings.ReadFocus),
                 Sw(T("Read what is under the cursor", "Leer lo que hay bajo el cursor"), Settings.ReadOnHover),
-                Sw(T("Read the tooltips of menus", "Leer las descripciones de los menús"), Settings.SpeakTooltips)),
+                Sw(T("Read the tooltips of menus", "Leer las descripciones de los menús"), Settings.SpeakTooltips),
+                Sw(T("Say button and its place among the buttons", "Decir botón y su lugar entre los botones"), Settings.SayButtons)),
             Sub(T("Sound glossary", "Glosario de sonidos"), Glossary().ToArray()),
         };
     }

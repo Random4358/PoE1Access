@@ -1921,6 +1921,8 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
         _focusRow = FindRow(e);
         string controlKind = "";
         _focusValue = _focusRow != null ? ControlValue(_focusRow, out controlKind) : "";
+        // "Log in button, 2 of 5" (ButtonPlace.cs).
+        if (text.Length > 0) text += Try(() => ButtonSuffix(e), "");
 
         PluginLog.Write(kind + ": [" + path + "] name=" + UiText.Name(Mem, e) + " -> \"" + text + "\"" +
                         (controlKind.Length > 0 ? " control=" + controlKind : ""));

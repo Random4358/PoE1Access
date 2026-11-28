@@ -264,6 +264,10 @@ The price is read from the screen, and this has not been tried in the game yet: 
 is found, the mod writes what it saw to its log ("Vendor price not found").
 
 TOOLTIPS IN MENUS
+
+A selected button is said with the word button and its place among the buttons beside it:
+"log in button, 2 of 5". "Say button and its place among the buttons" in the Reading submenu
+turns this off.
 When you move to a menu entry or button that shows a tooltip, the tooltip is read after its
 name, in any menu, including new ones a game update adds. In a menu, tap L3 for its next line,
 double tap for the previous one, and hold L3 for all of it. Turn it off with "Read the tooltips

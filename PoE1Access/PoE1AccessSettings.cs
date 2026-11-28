@@ -39,6 +39,8 @@ public class PoE1AccessSettings : ISettings
     public ToggleNode QuestRoute { get; set; } = new ToggleNode(true);
     // How each class plays, after its name on the class screen (ClassDescriptions.cs).
     public ToggleNode ClassDescriptions { get; set; } = new ToggleNode(true);
+    // "Log in button, 2 of 5" for a selected button (ButtonPlace.cs).
+    public ToggleNode SayButtons { get; set; } = new ToggleNode(true);
 
     // How long the hovered thing must stay the same before it is spoken (milliseconds).
     // Raise it if you hear too many half-finished announcements.
