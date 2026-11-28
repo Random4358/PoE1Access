@@ -64,7 +64,29 @@ public partial class PoE1AccessCore
             tried.Add(d + " (" + what + ")");
         }
         PluginLog.Write("Path of Building checks: " + string.Join(" | ", tried) + (folderOnly != null ? "; trying " + folderOnly : ""));
+        if (folderOnly == null) LogWhatThisProcessSees();
         return folderOnly;
+    }
+
+    // What this process can see of the user's folders, to learn why an installed Path of Building
+    // is not found from inside Exile API (28 Nov 2026: its folder "does not exist" there).
+    private static bool _sightLogged;
+    private static void LogWhatThisProcessSees()
+    {
+        if (_sightLogged) return;
+        _sightLogged = true;
+        var parts = new List<string>();
+        void Add(string name, Func<string> f) { try { parts.Add(name + "=" + f()); } catch (Exception ex) { parts.Add(name + " error " + ex.GetType().Name + ": " + ex.Message); } }
+        string appData = "";
+        try { appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData); } catch { }
+        Add("user", () => Environment.UserDomainName + "\\" + Environment.UserName);
+        Add("admin", () => new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent()).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator).ToString());
+        Add("process", () => Environment.ProcessPath ?? "?");
+        Add("appdata", () => appData + " exists " + Directory.Exists(appData));
+        Add("profile", () => { string pr = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile); return pr + " exists " + Directory.Exists(pr); });
+        Add("appdata folders", () => string.Join(", ", Directory.GetDirectories(appData).Select(Path.GetFileName).Take(60)));
+        Add("downloads", () => Directory.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads")).ToString());
+        PluginLog.Write("Path of Building: what this process sees: " + string.Join(" | ", parts));
     }
 
     private static IEnumerable<string> PoBFolderCandidates()
