@@ -386,6 +386,10 @@ public partial class PoE1AccessCore
         var config = new StringBuilder("<Config activeConfigSet=\"1\"><ConfigSet id=\"1\" title=\"Default\">");
         config.Append("<Input name=\"resistancePenalty\" number=\"").Append(m.Penalty).Append("\"/>");
         if (m.EnemyLevel > 0) config.Append("<Input name=\"enemyLevel\" number=\"").Append(m.EnemyLevel).Append("\"/>");
+        // An ordinary monster: Path of Building's default enemy is a Guardian or Pinnacle boss, level
+        // 84 whatever your level, which gave a level 2 character a 6% chance to hit and 3 damage
+        // per second where the game's skill said 28 (28 Nov 2026).
+        config.Append("<Input name=\"enemyIsBoss\" string=\"None\"/>");
         config.Append("</ConfigSet></Config>\n");
 
         var items = new StringBuilder();
