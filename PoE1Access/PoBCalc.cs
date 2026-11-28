@@ -32,16 +32,48 @@ public partial class PoE1AccessCore
     private Dictionary<string, string> _pobBuildResult;
     private string _buildXml;
 
+    // Where Path of Building Community is installed: where its installer recorded it in the
+    // registry (its uninstall entry), else the usual folders. Not found inside Exile API on
+    // 28 Nov 2026 although installed in AppData\Roaming, so every place is tried and, when none
+    // holds it, each is written to the log.
     private static string PoBFolder()
     {
-        foreach (string d in new[]
+        var tried = new List<string>();
+        foreach (string d in PoBFolderCandidates())
         {
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Path of Building Community"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Path of Building Community"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Path of Building Community"),
-        })
-            if (File.Exists(Path.Combine(d, "Launch.lua")) && File.Exists(Path.Combine(d, "lua51.dll"))) return d;
+            if (string.IsNullOrWhiteSpace(d) || tried.Contains(d)) continue;
+            tried.Add(d);
+            try { if (File.Exists(Path.Combine(d, "Launch.lua")) && File.Exists(Path.Combine(d, "lua51.dll"))) return d; } catch { }
+        }
+        PluginLog.Write("Path of Building not found in: " + string.Join(" | ", tried));
         return null;
+    }
+
+    private static IEnumerable<string> PoBFolderCandidates()
+    {
+        foreach (var hive in new[] { Microsoft.Win32.Registry.CurrentUser, Microsoft.Win32.Registry.LocalMachine })
+        {
+            string loc = null;
+            try
+            {
+                using var key = hive.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\Path of Building Community");
+                loc = (key?.GetValue("InstallLocation") as string)?.Trim().Trim('"');
+                if (string.IsNullOrEmpty(loc)) loc = Path.GetDirectoryName((key?.GetValue("UninstallString") as string)?.Trim().Trim('"') ?? "");
+            }
+            catch { }
+            if (!string.IsNullOrEmpty(loc)) yield return loc;
+        }
+        string Safe(Func<string> f) { try { return f() ?? ""; } catch { return ""; } }
+        string appData = Safe(() => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+        string envAppData = Safe(() => Environment.GetEnvironmentVariable("APPDATA"));
+        string profile = Safe(() => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        if (appData.Length > 0) yield return Path.Combine(appData, "Path of Building Community");
+        if (envAppData.Length > 0) yield return Path.Combine(envAppData, "Path of Building Community");
+        if (profile.Length > 0) yield return Path.Combine(profile, "AppData", "Roaming", "Path of Building Community");
+        string local = Safe(() => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+        if (local.Length > 0) yield return Path.Combine(local, "Programs", "Path of Building Community");
+        string pf = Safe(() => Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
+        if (pf.Length > 0) yield return Path.Combine(pf, "Path of Building Community");
     }
 
     private void CalculateBuildWithPoB()
