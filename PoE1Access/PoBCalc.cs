@@ -39,14 +39,32 @@ public partial class PoE1AccessCore
     private static string PoBFolder()
     {
         var tried = new List<string>();
+        string folderOnly = null;
         foreach (string d in PoBFolderCandidates())
         {
-            if (string.IsNullOrWhiteSpace(d) || tried.Contains(d)) continue;
-            tried.Add(d);
-            try { if (File.Exists(Path.Combine(d, "Launch.lua")) && File.Exists(Path.Combine(d, "lua51.dll"))) return d; } catch { }
+            if (string.IsNullOrWhiteSpace(d) || tried.Any(t => t.StartsWith(d + " ", StringComparison.Ordinal))) continue;
+            // Each check is written down: inside Exile API the files were not seen on 28 Nov 2026
+            // although they were there, so what each check gave is kept for the log.
+            string what;
+            try
+            {
+                bool dir = Directory.Exists(d);
+                bool launch = File.Exists(Path.Combine(d, "Launch.lua"));
+                bool lua = File.Exists(Path.Combine(d, "lua51.dll"));
+                int files = -1;
+                string listErr = "";
+                if (dir) { try { files = Directory.GetFiles(d).Length; } catch (Exception ex) { listErr = " list error: " + ex.Message; } }
+                what = $"folder={dir} Launch.lua={launch} lua51.dll={lua} files={files}{listErr}";
+                if (launch && lua) return d;
+                // The folder is there, and Path of Building's own files list in it: worth trying,
+                // the helper reports what goes wrong.
+                if (dir && folderOnly == null && (files > 0 || listErr.Length > 0)) folderOnly = d;
+            }
+            catch (Exception ex) { what = "error: " + ex.Message; }
+            tried.Add(d + " (" + what + ")");
         }
-        PluginLog.Write("Path of Building not found in: " + string.Join(" | ", tried));
-        return null;
+        PluginLog.Write("Path of Building checks: " + string.Join(" | ", tried) + (folderOnly != null ? "; trying " + folderOnly : ""));
+        return folderOnly;
     }
 
     private static IEnumerable<string> PoBFolderCandidates()
@@ -130,7 +148,7 @@ public partial class PoE1AccessCore
                 foreach (string a in new[] { pob, driver, xmlFile, outFile, mode }) psi.ArgumentList.Add(a);
                 using var p = Process.Start(psi);
                 p.StandardOutput.ReadToEndAsync();
-                p.StandardError.ReadToEndAsync();
+                var errText = p.StandardError.ReadToEndAsync();
                 if (!p.WaitForExit(90000)) { try { p.Kill(); } catch { } throw new Exception("it took too long"); }
                 var result = new Dictionary<string, string>();
                 if (File.Exists(outFile))
@@ -140,7 +158,13 @@ public partial class PoE1AccessCore
                         if (eq > 0) result[line.Substring(0, eq)] = line.Substring(eq + 1);
                     }
                 if (result.TryGetValue("error", out string err)) throw new Exception(err.Replace("^1", "").Replace("^0", "").Replace("^8", "").Trim());
-                if (!result.ContainsKey("ok")) throw new Exception("no result");
+                if (!result.ContainsKey("ok"))
+                {
+                    string err2 = "";
+                    try { err2 = errText.Wait(2000) ? errText.Result.Trim() : ""; } catch { }
+                    if (err2.Length > 300) err2 = err2.Substring(0, 300);
+                    throw new Exception("no result, exit code " + p.ExitCode + (err2.Length > 0 ? ": " + err2 : ""));
+                }
                 PluginLog.Write("Path of Building " + mode + ": " + string.Join(", ", result.Select(kv => kv.Key + "=" + kv.Value)));
                 string text = PoBWords(result, who);
                 if (mode == "build") _pobBuildResult = result;
