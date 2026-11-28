@@ -21,7 +21,7 @@ namespace PoE1Access;
 // along nodes you do not have, as for "N points away".
 public partial class PoE1AccessCore
 {
-    private static readonly string[] FinderLists = { "Position", "Keystones", "Notables", "Jewel sockets", "Next to your nodes", "Your build" };
+    private static readonly string[] FinderLists = { "Position", "Keystones", "Notables", "Jewel sockets", "Next to your nodes", "Your build", "Taken in the build", "Taken outside the build" };
     private int _finderList, _finderIndex = -1;
     private long _finderTarget;
     private Element _passiveHover;
@@ -45,6 +45,8 @@ public partial class PoE1AccessCore
         3 => T("Jewel sockets", "Engarces de joya"),
         4 => T("Next to your nodes", "Junto a tus nodos"),
         5 => T("Your build", "Tu build"),
+        6 => T("Taken in the build", "Tomadas de la build"),
+        7 => T("Taken outside the build", "Tomadas fuera de la build"),
         _ => FinderLists[i],
     };
 
@@ -76,6 +78,11 @@ public partial class PoE1AccessCore
     {
         var nodes = FinderNodes(_finderList);
         string list = FinderListName(_finderList);
+        if (nodes.Count == 0 && _finderList >= 6 && _build == null)
+        {
+            Say(T($"{list}: no build loaded. Load one in the mod menu, under Build to follow.", $"{list}: no hay build cargada. Carga una en el menú del mod, en Build a seguir."), true);
+            return;
+        }
         if (nodes.Count == 0 && _finderList == 5)
         {
             // The Path of Building build followed (BuildFollow.cs). An empty list is "all taken"
@@ -93,7 +100,7 @@ public partial class PoE1AccessCore
         _finderTarget = node.Row;
 
         var parts = new List<string>();
-        if (announceList) parts.Add(list + ", " + nodes.Count);
+        if (announceList) parts.Add(_finderList == 5 ? BuildProgressWords() : list + ", " + nodes.Count);
         int pointsAway = node.Cost;
         string cost = node.Cost == 0 ? T("allocated", "asignado") : node.Cost == 1 ? (CanAllocate(node.Row) ? T("can be allocated", "se puede asignar") : T("1 point away", "a 1 punto"))
             : T($"{pointsAway} points away", $"a {pointsAway} puntos");
@@ -222,7 +229,8 @@ public partial class PoE1AccessCore
         LearnPassiveRows();
         var costs = PassiveCosts(elements, links, out var parents);
         var mem = Mem;
-        var buildNodes = list == 5 ? BuildNodes() : null;
+        var buildNodes = list >= 5 ? BuildNodes() : null;
+        ushort classStart = ClassStartPassive();
         foreach (var kv in elements)
         {
             long row = kv.Key;
@@ -234,10 +242,14 @@ public partial class PoE1AccessCore
                 3 => _passiveIdTextOfRow.TryGetValue(row, out string pid) && pid.StartsWith("jewel_slot", StringComparison.OrdinalIgnoreCase),
                 4 => cost == 1,
                 5 => cost > 0 && _passiveIdOfRow.TryGetValue(row, out ushort bid) && buildNodes.Contains(bid),
+                6 => cost == 0 && _passiveIdOfRow.TryGetValue(row, out ushort tid) && tid != classStart && buildNodes.Contains(tid),
+                7 => _build != null && cost == 0 && _passiveIdOfRow.TryGetValue(row, out ushort oid) && oid != classStart && BuildStepOf(oid) < 0,
                 _ => false,
             };
             if (!keep) continue;
-            result.Add(new FinderNode { Row = row, Name = NodeName(row), Cost = cost, Path = PathFromParents(row, parents) });
+            // The build's lists name each node's step ("Life, from Act 2").
+            string step = list == 5 || list == 6 ? (_passiveIdOfRow.TryGetValue(row, out ushort sid) ? BuildStepWords(sid) : "") : "";
+            result.Add(new FinderNode { Row = row, Name = NodeName(row) + step, Cost = cost, Path = PathFromParents(row, parents) });
         }
         // Fewest points first; those you have at the end; then by name, so the order holds.
         return result.OrderBy(n => n.Cost == 0 ? int.MaxValue : n.Cost).ThenBy(n => n.Name, StringComparer.OrdinalIgnoreCase).ToList();

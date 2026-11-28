@@ -481,6 +481,24 @@ public partial class PoE1AccessCore
         // A map: its tier, Atlas Drops, rarity and pack size, and dangerous mods first (Atlas.cs).
         string mapLine = Try(() => MapSummary(item, lines), "");
         if (mapLine.Length > 0) lines.Insert(1, mapLine);
+        // The followed build (BuildGear.cs): a gem's place in it, a worn piece against its piece.
+        if (_build != null)
+        {
+            if (GetComp<GemComp>(item) != null)
+            {
+                string g = Try(() => BuildGemLine(item), "");
+                if (g.Length > 0) lines.Insert(1, g);
+            }
+            else if (place == ItemPlace.Equipped)
+            {
+                try
+                {
+                    var c = BuildGearCompare(label, item);
+                    if (c.Short != null) { lines.Insert(1, c.Short); lines.AddRange(c.Details); }
+                }
+                catch (Exception ex) { Report("build gear", ex); }
+            }
+        }
 
         _tipLines = lines;
         _tipIndex = 0;
@@ -566,6 +584,8 @@ public partial class PoE1AccessCore
             }
         }
         string emptySlot = T($"{SlotName(slot)}, empty", $"{SlotName(slot)}, vacío");
+        string buildHere = Try(() => BuildGearCompare(slot, null).Short, null);
+        if (buildHere != null) emptySlot += ". " + buildHere;
         _tipLines = new List<string> { emptySlot };
         _tipIndex = 0;
         _tipItemAddr = 0;
@@ -624,6 +644,8 @@ public partial class PoE1AccessCore
             var known = EquipmentSlots.FirstOrDefault(s => s.Label == label);
             if (known.Label == null || Slots(server, known.Slot).Any()) return;   // filled: the item reader speaks
             string emptyLabel = T($"{SlotName(label)}, empty", $"{SlotName(label)}, vacío");
+            string buildHere = Try(() => BuildGearCompare(label, null).Short, null);
+            if (buildHere != null) emptyLabel += ". " + buildHere;
             _tipLines = new List<string> { emptyLabel };
             _tipIndex = 0;
             _tipItemAddr = 0;

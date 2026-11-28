@@ -1700,6 +1700,12 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
             if (opened.Count > 0 || closed.Count > 0) _panelsChangedMs = _clock.ElapsedMilliseconds;
             foreach (string t in closed) parts.Add(T($"{t} closed", $"Se cierra {t}"));
             foreach (string t in opened) parts.Add(T($"{t} open", $"Se abre {t}"));
+            // Opening the inventory with a build followed: how the worn gear stands (BuildGear.cs).
+            if (_build != null && opened.Any(t => IsGameWord(t, InventoryTitle)))
+            {
+                string gear = Try(BuildGearSummary, "");
+                if (gear.Length > 0) parts.Add(gear);
+            }
             if (parts.Count > 0)
             {
                 PluginLog.Write("Panels: " + string.Join(", ", parts));
@@ -2394,8 +2400,11 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
         string distance = "", links = "";
         try { (distance, links) = DescribePassiveLinks(hover, skill.Address); }
         catch (Exception ex) { Report("passive links", ex); }
+        // Its place in the followed build (BuildTree.cs): "in the build, from Act 2".
+        string buildNote = Try(() => BuildNodeNote(skill.Address, (ushort)skill.PassiveId, allocated), "");
         var parts = new List<string> { name + ", " + kind + (status.Length > 0 ? ", " + status : "") +
-                                        (!allocated && !string.IsNullOrEmpty(distance) && status == notLinkedText ? ", " + distance : "") };
+                                        (!allocated && !string.IsNullOrEmpty(distance) && status == notLinkedText ? ", " + distance : "") +
+                                        (buildNote.Length > 0 ? ", " + buildNote : "") };
         // The finder's guide (D-pad), right after the node's name, so it is heard first.
         _passiveHover = hover;
         _passiveHoverRow = skill.Address;
@@ -2404,6 +2413,8 @@ public partial class PoE1AccessCore : BaseSettingsPlugin<PoE1AccessSettings>
         _hoverQuiet = _finderQuietRow != 0 && _finderQuietRow == skill.Address;
         if (!_hoverQuiet) _finderQuietRow = 0;
         string guide = Try(() => FinderGuide(skill.Address), "");
+        // Without a finder target, the build's next node and the way to it (BuildTree.cs).
+        if (guide.Length == 0) guide = Try(() => BuildGuideLine(skill.Address), "");
         if (guide.Length > 0) parts.Add(guide);
 
         // What the node does: the game's own tooltip text when it can be found on screen,

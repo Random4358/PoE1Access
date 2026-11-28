@@ -54,6 +54,15 @@ internal sealed class BuildPlan
     public int ActiveSkillSet;   // the skill set the build was saved on
     public List<(string Slot, string Item)> Gear = new List<(string, string)>();
 
+    /// <summary>A piece of the build's gear: what it is and every modifier line it has.</summary>
+    public sealed class GearPiece
+    {
+        public string Slot = "", Rarity = "", Name = "", Base = "";
+        public List<string> Mods = new List<string>();
+    }
+
+    public List<GearPiece> Pieces = new List<GearPiece>();
+
     /// <summary>The XML inside a build code, or null when it is not one.</summary>
     public static string Decode(string code)
     {
@@ -79,6 +88,35 @@ internal sealed class BuildPlan
         using var output = new MemoryStream();
         using (var z = new ZLibStream(output, CompressionLevel.Optimal, true)) z.Write(Encoding.UTF8.GetBytes(xml));
         return Convert.ToBase64String(output.ToArray()).Replace('+', '-').Replace('/', '_');
+    }
+
+    // An item as Path of Building keeps it, the game's copied text with tags: "Rarity: RARE",
+    // the name, the base, lines such as "Item Level: 84", "Implicits: 1", then the modifiers,
+    // some starting with tags ("{crafted}", "{range:0.5}").
+    private static GearPiece Piece(List<string> lines)
+    {
+        var piece = new GearPiece();
+        int i = 0;
+        if (lines.Count > 0 && lines[0].StartsWith("Rarity:", StringComparison.OrdinalIgnoreCase)) { piece.Rarity = lines[0].Substring(7).Trim().ToUpperInvariant(); i = 1; }
+        var names = new List<string>();
+        while (i < lines.Count && names.Count < 2 && !lines[i].Contains(':')) names.Add(lines[i++]);
+        if (names.Count == 2) { piece.Name = names[0]; piece.Base = names[1]; }
+        else if (names.Count == 1) piece.Base = piece.Name = names[0];
+        int imp = lines.FindIndex(l => l.StartsWith("Implicits:", StringComparison.OrdinalIgnoreCase));
+        // A unique with several versions keeps every version's lines, each tagged
+        // "{variant:1,2}"; only the chosen version's ("Selected Variant: 2") count.
+        string chosen = lines.Where(l => l.StartsWith("Selected Variant:", StringComparison.OrdinalIgnoreCase))
+                             .Select(l => l.Substring(17).Trim()).FirstOrDefault();
+        if (imp >= 0)
+            foreach (string line in lines.Skip(imp + 1))
+            {
+                var variant = System.Text.RegularExpressions.Regex.Match(line, @"\{variant:([0-9,]+)\}");
+                if (variant.Success && chosen != null && !variant.Groups[1].Value.Split(',').Contains(chosen)) continue;
+                string l = System.Text.RegularExpressions.Regex.Replace(line, @"^(\{[^}]*\})+", "").Trim();
+                if (l.Length == 0 || l.Equals("Corrupted", StringComparison.OrdinalIgnoreCase) || l.EndsWith(" Item", StringComparison.Ordinal)) continue;
+                piece.Mods.Add(l);
+            }
+        return piece;
     }
 
     public static BuildPlan Parse(string xml)
@@ -158,10 +196,12 @@ internal sealed class BuildPlan
         if (items != null)
         {
             var byId = new Dictionary<string, string>();
+            var pieceOf = new Dictionary<string, GearPiece>();
             foreach (var it in items.Elements("Item"))
             {
                 string id = (string)it.Attribute("id") ?? "";
                 var lines = it.Value.Replace("\r", "").Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
+                pieceOf[id] = Piece(lines);
                 // "Rarity: RARE", then the name, then (for magic and better with two lines) the base.
                 int start = lines.Count > 0 && lines[0].StartsWith("Rarity:", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
                 string rarity = start == 1 ? lines[0].Substring(7).Trim() : "";
@@ -184,6 +224,8 @@ internal sealed class BuildPlan
                 string slot = (string)sl.Attribute("name") ?? "";
                 string id = (string)sl.Attribute("itemId") ?? "0";
                 if (slot.Length > 0 && id != "0" && byId.TryGetValue(id, out string item)) plan.Gear.Add((slot, item));
+                if (slot.Length > 0 && id != "0" && pieceOf.TryGetValue(id, out var piece))
+                    plan.Pieces.Add(new GearPiece { Slot = slot, Rarity = piece.Rarity, Name = piece.Name, Base = piece.Base, Mods = piece.Mods });
             }
         }
 

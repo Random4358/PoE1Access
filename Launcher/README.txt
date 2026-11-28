@@ -241,8 +241,19 @@ code, or a pobb.in or pastebin link to one (guides give these), then in the mod 
 to follow (Path of Building)" and choose "Load a build from the clipboard". After that:
 - "About the build": the class and ascendancy, the bandit, each skill setup with its gems, the
   gear and the names of its passive trees. "Read the notes" reads the guide's notes.
-- In the passive tree, the D-pad's lists have one more, "Your build": the build's passives you
-  have not taken, fewest points first, each with the way to it, as the other lists.
+- In the passive tree, every node says its place in the build: "in the build, from Act 2" (the
+  first of the build's trees that takes it), "next in the build", "outside the build" for one
+  you took that the build does not, and each node ends with the build's next node and the way to
+  it ("Next in the build: Life: down left").
+- The D-pad's lists have three more: "Your build" (the build's passives you have not taken,
+  fewest points first, opening with how far along you are: "16 of 60 taken, 3 points outside
+  the build"), "Taken in the build" and "Taken outside the build".
+- A worn piece of gear says, after its name, how it compares with the build's piece for that
+  slot ("Build: same base, 3 of 6 modifiers"), and after its own lines each modifier the build
+  wants against yours ("+150 to maximum Life, the build asks for 150" with yours first,
+  "Missing: ..." or "met"); a unique is named ("not this one"). An empty slot says what the
+  build puts there, and opening the inventory says how the worn gear stands. A gem says which of
+  the build's skill setups it is for.
 - When you level up, the build's next passive is said ("Build: next passive, Life").
 - "Your gems against the build": for each skill setup, where you have it and which of its gems
   are missing or not linked with it.
