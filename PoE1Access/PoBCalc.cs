@@ -141,8 +141,8 @@ public partial class PoE1AccessCore
         string xml = Try(CharacterXml, null);
         if (xml == null) { Say(T("Enter the game with your character first.", "Entra antes en el juego con tu personaje."), true); return; }
         // Which enemy, so the numbers are heard with what they are against.
-        string against = T($"against {EnemyTypeWords(Settings.PoBEnemyType.Value)} of {EnemyLevelWords(Settings.PoBEnemyLevel.Value)}",
-                           $"contra {EnemyTypeWords(Settings.PoBEnemyType.Value)} de {EnemyLevelWords(Settings.PoBEnemyLevel.Value)}");
+        string against = T($"against {EnemyShortWords()} of {EnemyLevelWords(Settings.PoBEnemyLevel.Value)}",
+                           $"contra {EnemyShortWords()} de {EnemyLevelWords(Settings.PoBEnemyLevel.Value)}");
         RunPoB(xml, "character", T($"Your character, {against}", $"Tu personaje, {against}"));
     }
 
@@ -383,18 +383,31 @@ public partial class PoE1AccessCore
         return result;
     }
 
-    /// <summary>A character model as a Path of Building file.</summary>
-    private static string EnemyTypeWords(int v) => v switch
+    // "Is the enemy a Boss?", Path of Building's own answers, each with what it means.
+    private static string EnemyBossWords(int v) => v switch
     {
-        1 => T("a rare or unique monster", "un monstruo raro o único"),
-        2 => T("a standard boss", "un jefe normal"),
-        3 => T("a Guardian or Pinnacle boss", "un jefe guardián o de cumbre"),
-        4 => T("an Uber Pinnacle boss", "un jefe de cumbre uber"),
-        _ => T("an ordinary monster", "un monstruo normal"),
+        1 => T("Standard Boss: a story or map boss, such as Hillock or Brutus. As Path of Building has it: 40% more elemental resistance and 25% more chaos resistance, and it hits harder than other monsters. It counts as rare or unique too",
+               "Jefe estándar: un jefe de la historia o de un mapa, como Hillock o Brutus. Según Path of Building: 40% más de resistencia elemental y 25% más de resistencia al caos, y golpea más fuerte que otros monstruos. También cuenta como raro o único"),
+        2 => T("Guardian/Pinnacle Boss: an Atlas guardian or an endgame boss, such as the Shaper. 50% more elemental resistance and 30% more chaos resistance, much more armour and evasion, harder hits, and its hits penetrate your resistances",
+               "Jefe guardián o de cumbre: un guardián del Atlas o un jefe final, como el Creador. 50% más de resistencia elemental y 30% más al caos, mucha más armadura y evasión, golpes más fuertes, y sus golpes penetran tus resistencias"),
+        3 => T("Uber Pinnacle Boss: the uber versions of the endgame bosses. As a Pinnacle Boss, and it also takes 70% less damage and hits harder still",
+               "Jefe de cumbre uber: las versiones uber de los jefes finales. Como un jefe de cumbre, y además recibe 70% menos daño y golpea aún más fuerte"),
+        _ => T("No: not a boss", "No: no es un jefe"),
     };
+
+    // How the enemy is named before your character's numbers: "against a Standard Boss".
+    private string EnemyShortWords()
+    {
+        int boss = Settings.PoBEnemyBoss.Value;
+        if (boss == 1) return T("a Standard Boss", "un jefe estándar");
+        if (boss == 2) return T("a Guardian or Pinnacle Boss", "un jefe guardián o de cumbre");
+        if (boss == 3) return T("an Uber Pinnacle Boss", "un jefe de cumbre uber");
+        return Settings.PoBEnemyRareOrUnique.Value ? T("a rare or unique enemy", "un enemigo raro o único") : T("an enemy that is not a boss", "un enemigo que no es jefe");
+    }
 
     private static string EnemyLevelWords(int v) => v <= 0 ? T("the area's level", "el nivel del área") : T($"level {v}", $"nivel {v}");
 
+    /// <summary>A character model as a Path of Building file.</summary>
     private string ModelXml(CharModel m)
     {
         var config = new StringBuilder("<Config activeConfigSet=\"1\"><ConfigSet id=\"1\" title=\"Default\">");
@@ -405,10 +418,10 @@ public partial class PoE1AccessCore
         // second where the game's skill said 28 (28 Nov 2026).
         int enemyLevel = Settings.PoBEnemyLevel.Value > 0 ? Settings.PoBEnemyLevel.Value : m.EnemyLevel;
         if (enemyLevel > 0) config.Append("<Input name=\"enemyLevel\" number=\"").Append(enemyLevel).Append("\"/>");
-        int kind = Settings.PoBEnemyType.Value;
-        string boss = kind switch { 2 => "Boss", 3 => "Pinnacle", 4 => "Uber", _ => "None" };
+        // As Path of Building asks: a boss or not, and rare or unique (a boss counts as one itself).
+        string boss = Settings.PoBEnemyBoss.Value switch { 1 => "Boss", 2 => "Pinnacle", 3 => "Uber", _ => "None" };
         config.Append("<Input name=\"enemyIsBoss\" string=\"").Append(boss).Append("\"/>");
-        if (kind == 1) config.Append("<Input name=\"conditionEnemyRareOrUnique\" boolean=\"true\"/>");
+        if (Settings.PoBEnemyRareOrUnique.Value) config.Append("<Input name=\"conditionEnemyRareOrUnique\" boolean=\"true\"/>");
         config.Append("</ConfigSet></Config>\n");
 
         var items = new StringBuilder();

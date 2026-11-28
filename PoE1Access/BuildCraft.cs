@@ -450,7 +450,9 @@ public partial class PoE1AccessCore
                 A(T("Clear your plan", "Borrar tu plan"), T("Move right.", "Muévete a la derecha."), ClearPlan),
                 A(T("Skill Path of Building calculates", "Habilidad que calcula Path of Building"), T("Move right for the next of your skills.", "Muévete a la derecha para la siguiente de tus habilidades."), CycleMainSkill, DescribeMainSkill),
                 // The enemy your character is calculated against (PoBCalc.cs).
-                new MenuItem { Label = T("Enemy Path of Building calculates against", "Enemigo contra el que calcula Path of Building"), Range = Settings.PoBEnemyType, Step = 1, Words = EnemyTypeWords },
+                // Path of Building's own enemy settings, by its own names, each answer explained.
+                new MenuItem { Label = T("Is the enemy a Boss?", "¿Es el enemigo un jefe?"), Range = Settings.PoBEnemyBoss, Step = 1, Words = EnemyBossWords },
+                new MenuItem { Label = T("Is the enemy Rare or Unique? A rare pack leader or a unique monster; a boss counts as one by itself", "¿Es el enemigo raro o único? Un líder raro de manada o un monstruo único; un jefe cuenta como tal por sí solo"), Toggle = Settings.PoBEnemyRareOrUnique },
                 new MenuItem { Label = T("Enemy level", "Nivel del enemigo"), Range = Settings.PoBEnemyLevel, Step = 1, Words = EnemyLevelWords },
                 supports,
             },

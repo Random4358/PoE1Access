@@ -287,10 +287,11 @@ CRAFTING YOUR OWN BUILD (needs Path of Building Community installed)
   your plan as your build, copy your plan or your character as a build code (to paste in Path of
   Building or send to a friend), clear your plan, choose which of your skills Path of Building
   calculates, and try any support gem on that skill, added or instead of each support it has.
-  "Enemy Path of Building calculates against" and "Enemy level" choose what your character's
-  numbers and every comparison face: an ordinary monster (the default), a rare or unique one, a
-  standard boss, a Guardian or Pinnacle boss or an Uber Pinnacle boss, at the area's level (the
-  default) or a level you choose. Pinnacle and Uber bosses keep their own level.
+  The enemy your character's numbers and every comparison face is set as Path of Building sets
+  it, by its own names: "Is the enemy a Boss?" (No, the default; Standard Boss, a story or map
+  boss; Guardian/Pinnacle Boss; Uber Pinnacle Boss), each answer explained as you choose it; "Is
+  the enemy Rare or Unique?" (a boss counts as one by itself); and "Enemy level" (the area's, the
+  default, or a level you choose; the bosses' own resistances, armour and evasion come on top).
 Each answer takes a few seconds. Nothing is allocated, equipped or socketed for you.
 
 CLASS DESCRIPTIONS
