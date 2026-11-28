@@ -250,6 +250,10 @@ internal sealed class GameSounds : IDisposable
         // Attribute of an armour base from its path ("BodyStr1", "GlovesDexInt2").
         string attr = P("StrDex") ? "StrDex" : P("StrInt") ? "StrInt" : P("DexInt") ? "DexInt" : P("Str") ? "Str" : P("Dex") ? "Dex" : P("Int") ? "Int" : "";
 
+        // Gold has its own coin sound in the game (Metadata/Items/Currency/GoldCoin -> GoldCoin.ogg,
+        // found 28 Nov 2026 in ItemDrops.bank): the game plays it as gold drops, and the mod used the
+        // orb's, so the game's coins on a kill sounded like something the scanner did not list.
+        if (cls == "Gold" || path.EndsWith("/GoldCoin", StringComparison.OrdinalIgnoreCase)) return E("GoldCoin");
         if (path.EndsWith("CurrencyIdentification") || path.EndsWith("CurrencyPortal")) return E("Scroll");
         if (P("/Essence")) return E("EssenceItem");
         if (P("/Delve") && P("Fossil")) return E("DelveFossil");
