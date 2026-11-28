@@ -49,8 +49,15 @@ internal sealed partial class Navigator
                 if (a != 0) shown.Add(a);
             }
         _shownLoot = shown;
-        _labelsShown = shown.Count > 0;
+        // Once labels have been seen in this area the list is trusted, also when it is empty: an
+        // enemy that dropped only what the filter hides (a plain ring) left no label shown, every
+        // item then counted as shown, and the hidden ring was heard but not listed (28 Nov 2026).
+        long area = Try(() => (long)_gc.Area.CurrentArea.Hash, 0L);
+        if (area != _labelsArea) { _labelsArea = area; _labelsShown = false; }
+        if (shown.Count > 0) _labelsShown = true;
     }
+
+    private long _labelsArea;
 
     /// <summary>Whether an item on the ground is one the game's loot filter shows.</summary>
     private bool LootShown(Entity e) => !FollowLootFilter || !_labelsShown || _shownLoot.Contains(Try(() => e.Address, 0L));
